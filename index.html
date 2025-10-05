@@ -418,32 +418,32 @@ async function toggleDetail(id) {
   }
 }
 
-/* QR 스캔 (html5-qrcode) */
-document.getElementById("scanBtn").addEventListener("click", () => {
+/* QR 스캔 (html5-qrcode) 개선 버전 */
+let qrActive = false;
+
+document.getElementById("scanBtn").addEventListener("click", async () => {
+  if (qrActive) return; // 이미 실행 중이면 중복 방지
+  qrActive = true;
+
   const readerDiv = document.getElementById("reader");
   readerDiv.innerHTML = "";
   const html5QrCode = new Html5Qrcode("reader");
 
-  html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, (decodedText) => {
-    try {
-      const obj = JSON.parse(decodedText);
-      readerDiv.innerHTML = `
-        <div class="p-4 bg-white rounded-lg shadow text-left">
-          <h2 class="text-xl font-semibold mb-2">QR 코드 스캔 결과</h2>
-          <p><b>지역:</b> ${obj.region}</p>
-          <p><b>지점:</b> ${obj.location}</p>
-          <p><b>물건명:</b> ${obj.device}</p>
-          <p><b>사고 내용:</b> ${obj.problem}</p>
-          <h3 class="mt-2 font-bold">해결 단계</h3>
-          <ol class="list-decimal list-inside">${(obj.solutions || []).map(sol => (sol.steps || []).map(s=>`<li>${s.text || ''}</li>`).join('')).join('')}</ol>
-        </div>`;
-      html5QrCode.stop();
-    } catch (e) {
-      alert("잘못된 QR 코드 형식이에요.");
-    }
-  }, () => {}).catch(() => {
-    alert("카메라 접근 실패. 브라우저 권한을 확인하세요.");
-  });
+  try {
+    await html5QrCode.start(
+      { facingMode: { ideal: "environment" } },  // ✅ 후면 우선, 불가시 전면 자동
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decodedText) => {
+        alert("QR 코드 인식됨 ✅\n" + decodedText);
+        html5QrCode.stop();
+        qrActive = false;
+      }
+    );
+  } catch (e) {
+    alert("카메라 접근 실패 ❌ (브라우저 권한 확인)");
+    console.error(e);
+    qrActive = false;
+  }
 });
 
 // DOMContentLoaded - bind events and initial render, and check URL param
