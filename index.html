@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FixItFast</title>
+  <title>FixItFast - Firebase Fixed</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -66,39 +66,51 @@
     </div>
   </div>
 
+<!-- Firebase module (must be module to use v10 API) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, query, orderBy, doc, getDoc, deleteDoc, updateDoc
+  } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
+  const firebaseConfig = {
+    apiKey: "AIzaSyA75TRjxqZusMTv9J7SpChNqavgZQH5LeI",
+    authDomain: "fixitfast-web.firebaseapp.com",
+    projectId: "fixitfast-web",
+    storageBucket: "fixitfast-web.firebasestorage.app",
+    messagingSenderId: "609762639355",
+    appId: "1:609762639355:web:a8a39674fe5f806f085f5e"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // expose to window so non-module script can use them
+  window.db = db;
+  window.addDoc = addDoc;
+  window.collection = collection;
+  window.getDocs = getDocs;
+  window.query = query;
+  window.orderBy = orderBy;
+  window.doc = doc;
+  window.getDoc = getDoc;
+  window.deleteDoc = deleteDoc;
+  window.updateDoc = updateDoc;
+</script>
 
 <script>
-/* --- 데이터 구조
-issue = {
-  region, location, device, problem, problemImg,
-  solutions: [
-    { steps: [ { text, img }, ... ] },
-    ...
-  ],
-  updated
-}
-*/
+/* Main script (non-module) - uses window.* provided by module */
+let currentIssues = []; // holds last fetched list
+let editDocId = null;
 
-let issues = JSON.parse(localStorage.getItem('issues') || '[]');
-let editIndex = null;
-
-const issueList = document.getElementById('issueList');
-const recentList = document.getElementById('recentList');
-const modal = document.getElementById('modal');
-const modalTitle = document.getElementById('modalTitle');
-
-/* ------------ 유틸 함수 ------------- */
 function toBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
-
-/* ------------ UI 생성 함수 ------------- */
 
 function addStep(container) {
   const stepDiv = document.createElement('div');
@@ -113,7 +125,6 @@ function addStep(container) {
   `;
   stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
 
-  // 파일 선택하면 미리보기 보이게
   const fileInput = stepDiv.querySelector('.step-image');
   const preview = stepDiv.querySelector('.step-preview');
   fileInput.addEventListener('change', (e) => {
@@ -153,91 +164,98 @@ function addSolution() {
   container.appendChild(div);
 }
 
-/* ------------ 모달 열기/닫기 ------------- */
-function openModal(edit=false, idx=null) {
+function openModal(edit=false, docId=null) {
+  editDocId = null;
+  const modal = document.getElementById('modal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
-  modalTitle.textContent = edit ? '고장 내역 편집' : '고장 내역 등록';
-  editIndex = edit ? idx : null;
+  document.getElementById('modalTitle').textContent = edit ? '고장 내역 편집' : '고장 내역 등록';
 
-  // 초기화
+  // clear fields
   document.getElementById('region').value = '';
   document.getElementById('location').value = '';
   document.getElementById('device').value = '';
   document.getElementById('problem').value = '';
   document.getElementById('problemPhoto').value = '';
-  const pprev = document.getElementById('problemPreview');
-  pprev.classList.add('hidden');
-  pprev.src = '';
+  document.getElementById('problemPreview').classList.add('hidden');
+  document.getElementById('problemPreview').src = '';
   document.getElementById('solutionsContainer').innerHTML = '';
 
-  if (edit) {
-    const issue = issues[idx];
-    document.getElementById('region').value = issue.region || '';
-    document.getElementById('location').value = issue.location || '';
-    document.getElementById('device').value = issue.device || '';
-    document.getElementById('problem').value = issue.problem || '';
-    if (issue.problemImg) {
-      pprev.src = issue.problemImg;
-      pprev.classList.remove('hidden');
-    }
-    (issue.solutions || []).forEach(sol => {
-      const div = document.createElement('div');
-      div.className = 'solution-item border p-2 rounded bg-white';
-      div.innerHTML = `
-        <div class="flex justify-between items-center mb-2">
-          <h3 class="font-semibold">해결방법</h3>
-          <div>
-            <button class="removeSolution text-red-500 text-sm mr-2">❌</button>
+  if (edit && docId) {
+    // fetch doc and populate
+    window.getDoc(window.doc(window.db, "issues", docId)).then(snap => {
+      if (!snap.exists) return alert('문서를 찾을 수 없습니다');
+      const data = snap.data();
+      document.getElementById('region').value = data.region || '';
+      document.getElementById('location').value = data.location || '';
+      document.getElementById('device').value = data.device || '';
+      document.getElementById('problem').value = data.problem || '';
+      if (data.problemImg) {
+        const pprev = document.getElementById('problemPreview');
+        pprev.src = data.problemImg;
+        pprev.classList.remove('hidden');
+      }
+      (data.solutions || []).forEach(sol => {
+        const div = document.createElement('div');
+        div.className = 'solution-item border p-2 rounded bg-white';
+        div.innerHTML = `
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="font-semibold">해결방법</h3>
+            <div>
+              <button class="removeSolution text-red-500 text-sm mr-2">❌</button>
+            </div>
           </div>
-        </div>
-        <div class="steps space-y-2 mb-2"></div>
-        <div class="flex space-x-2">
-          <button class="addStep bg-gray-200 text-xs px-2 py-1 rounded">+ 단계 추가</button>
-        </div>
-      `;
-      div.querySelector('.removeSolution').onclick = () => div.remove();
-      div.querySelector('.addStep').onclick = () => addStep(div.querySelector('.steps'));
-
-      (sol.steps || []).forEach(s => {
-        const stepDiv = document.createElement('div');
-        stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
-        stepDiv.innerHTML = `
-          <div class="flex justify-between items-center">
-            <input value="${s.text || ''}" class="step-input w-full border p-2 rounded mb-1">
-            <button class="removeStep text-red-500 text-sm ml-2">X</button>
+          <div class="steps space-y-2 mb-2"></div>
+          <div class="flex space-x-2">
+            <button class="addStep bg-gray-200 text-xs px-2 py-1 rounded">+ 단계 추가</button>
           </div>
-          <input type="file" accept="image/*" class="step-image w-full">
-          ${s.img ? `<img src="${s.img}" class="step-preview mt-2 max-h-32 rounded border">` : `<img class="step-preview hidden mt-2 max-h-32 rounded border">`}
         `;
-        stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
-        div.querySelector('.steps').appendChild(stepDiv);
-        const previewEl = stepDiv.querySelector('.step-preview');
-        if (s.img) previewEl.classList.remove('hidden');
-      });
+        div.querySelector('.removeSolution').onclick = () => div.remove();
+        div.querySelector('.addStep').onclick = () => addStep(div.querySelector('.steps'));
 
-      document.getElementById('solutionsContainer').appendChild(div);
-    });
+        (sol.steps || []).forEach(s => {
+          const stepDiv = document.createElement('div');
+          stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
+          stepDiv.innerHTML = `
+            <div class="flex justify-between items-center">
+              <input value="${s.text || ''}" class="step-input w-full border p-2 rounded mb-1">
+              <button class="removeStep text-red-500 text-sm ml-2">X</button>
+            </div>
+            <input type="file" accept="image/*" class="step-image w-full">
+            ${s.img ? `<img src="${s.img}" class="step-preview mt-2 max-h-32 rounded border">` : `<img class="step-preview hidden mt-2 max-h-32 rounded border">`}
+          `;
+          stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
+          div.querySelector('.steps').appendChild(stepDiv);
+          const previewEl = stepDiv.querySelector('.step-preview');
+          if (s.img) previewEl.classList.remove('hidden');
+        });
+
+        document.getElementById('solutionsContainer').appendChild(div);
+      });
+      editDocId = docId;
+    }).catch(e => console.error(e));
   }
 }
 
 function closeModal() {
+  const modal = document.getElementById('modal');
   modal.classList.add('hidden');
 }
 
-/* ------------ 저장 ------------- */
+/* Save (create or update) */
 async function saveIssue() {
   const region = document.getElementById('region').value;
   const location = document.getElementById('location').value;
   const device = document.getElementById('device').value;
   const problem = document.getElementById('problem').value;
 
-  // problem image
-  let problemImg = '';
-  const problemPhotoInput = document.getElementById('problemPhoto');
-if (problemPhotoInput && problemPhotoInput.files.length > 0) {
-  const file = problemPhotoInput.files[0];
-  problemImg = URL.createObjectURL(file); // Blob URL로 변환 (메모리 링크)
+let problemImg = '';
+const problemPhotoInput = document.getElementById('problemPhoto');
+const oldImg = document.getElementById('problemPreview').src;
+if (problemPhotoInput.files.length > 0) {
+  problemImg = await toBase64(problemPhotoInput.files[0]);
+} else if (oldImg) {
+  problemImg = oldImg; // 기존 이미지 유지
 }
 
 
@@ -247,148 +265,142 @@ if (problemPhotoInput && problemPhotoInput.files.length > 0) {
     const steps = [];
     const stepEls = solEl.querySelectorAll('.step-item');
     for (let stepEl of stepEls) {
-      const text = (stepEl.querySelector('.step-input') || {value:''}).value;
-      const fileInput = stepEl.querySelector('.step-image');
+      const text = (stepEl.querySelector('.step-input') || {}).value || '';
       let img = '';
-      if (fileInput && fileInput.files.length > 0) {
-        img = await toBase64(fileInput.files[0]);
-      } else {
-        const prev = stepEl.querySelector('.step-preview');
-        if (prev && !prev.classList.contains('hidden') && prev.src) img = prev.src;
-      }
-      steps.push({ text, img });
+      const imgInput = stepEl.querySelector('.step-image');
+   
+ const oldPreview = stepEl.querySelector('.step-preview');
+if (imgInput && imgInput.files.length > 0) {
+  img = await toBase64(imgInput.files[0]);
+} else if (oldPreview && oldPreview.src) {
+  img = oldPreview.src; // 기존 이미지 유지
+}
+steps.push({ text, img });
+
     }
     solutions.push({ steps });
   }
 
- const data = { 
-  id: Date.now(), // ← 이 줄 추가 (고유 ID)
-  region, location, device, problem, problemImg, solutions, 
-  updated: new Date().toISOString() 
-};
+  const data = { region, location, device, problem, problemImg, solutions, updated: new Date().toISOString() };
 
-  if (editIndex !== null) issues[editIndex] = data; else issues.push(data);
-
-  localStorage.setItem('issues', JSON.stringify(issues));
-  renderIssues();
-  closeModal();
+  try {
+    if (editDocId) {
+      await window.updateDoc(window.doc(window.db, "issues", editDocId), data);
+      alert("수정 완료 ✅");
+    } else {
+      await window.addDoc(window.collection(window.db, "issues"), data);
+      alert("저장 완료 ✅");
+    }
+    editDocId = null;
+    closeModal();
+    await renderIssues();
+  } catch (e) {
+    console.error("저장 오류:", e);
+    alert("저장 실패 ❌ (콘솔 확인)");
+  }
 }
 
-/* ------------ 렌더링 ------------- */
-function renderIssues(filter = "") {
+/* Render list from Firestore */
+async function renderIssues(filter = "") {
+  const issueList = document.getElementById("issueList");
   issueList.innerHTML = "";
-  const filtered = issues.filter(i => {
-    const f = filter.toLowerCase();
-    return (
-      (i.region || '').toLowerCase().includes(f) ||
-      (i.location || '').toLowerCase().includes(f) ||
-      (i.device || '').toLowerCase().includes(f) ||
-      (i.problem || '').toLowerCase().includes(f) ||
-      (i.solutions || []).some(sol =>
-        (sol.steps || []).some(s => (s.text || '').toLowerCase().includes(f))
-      )
-    );
-  });
 
-  filtered.forEach((issue, i) => {
-    const html = `
-      <div class="border p-4 rounded-lg bg-white shadow">
-        <p><b>${issue.region}</b> - ${issue.location}</p>
-        <p>${issue.device} | ${issue.problem}</p>
-        ${issue.problemImg ? `<img src="${issue.problemImg}" class="mt-2 rounded border max-h-40">` : ""}
-        ${(issue.solutions || []).map((sol, idx) => `
-          <div class="border-t pt-2 mt-2">
-            <p class="font-semibold">[${idx + 1}] 해결방법</p>
-            <ol class="list-decimal list-inside">
-              ${(sol.steps || []).map(s => `
-                <li class="mb-2">
-                  ${s.text || ''}
-                  ${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}
-                </li>
-              `).join('')}
-            </ol>
+  try {
+    const q = window.query(window.collection(window.db, "issues"), window.orderBy("updated", "desc"));
+    const snap = await window.getDocs(q);
+    const issues = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    currentIssues = issues;
+
+    const filtered = issues.filter(i => {
+      const f = filter.toLowerCase();
+      return (
+        (i.region || '').toLowerCase().includes(f) ||
+        (i.location || '').toLowerCase().includes(f) ||
+        (i.device || '').toLowerCase().includes(f) ||
+        (i.problem || '').toLowerCase().includes(f) ||
+        (i.solutions || []).some(sol =>
+          (sol.steps || []).some(s => (s.text || '').toLowerCase().includes(f))
+        )
+      );
+    });
+
+    filtered.forEach(issue => {
+      const html = `
+        <div class="border p-4 rounded-lg bg-white shadow">
+          <p><b>${issue.region}</b> - ${issue.location}</p>
+          <p>${issue.device} | ${issue.problem}</p>
+          ${issue.problemImg ? `<img src="${issue.problemImg}" class="mt-2 rounded border max-h-40">` : ""}
+          ${(issue.solutions || []).map((sol, idx) => `
+            <div class="border-t pt-2 mt-2">
+              <p class="font-semibold">[${idx + 1}] 해결방법</p>
+              <ol class="list-decimal list-inside">
+                ${(sol.steps || []).map(s => `
+                  <li class="mb-2">
+                    ${s.text || ''}
+                    ${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}
+                  </li>
+                `).join('')}
+              </ol>
+            </div>
+          `).join('')}
+          <div class="flex space-x-2 mt-3">
+            <button onclick="openModal(true, '${issue.id}')" class="text-blue-600">편집</button>
+            <button onclick="deleteIssue('${issue.id}')" class="text-red-600">삭제</button>
+            <button onclick="generateQRCodeAndCopy('${issue.id}')" class="text-green-600">url 복사 </button>
+ <button onclick="showLargeQR('${issue.id}')" class="text-blue-600">QR 이미지 보기</button>
+            <button onclick="toggleDetail('${issue.id}')" class="text-purple-600">내용 보기</button>
           </div>
-        `).join('')}
-        <div class="flex space-x-2 mt-3">
-          <button onclick="editIssue(${i})" class="text-blue-600">편집</button>
-          <button onclick="deleteIssue(${i})" class="text-red-600">삭제</button>
-          <button onclick="viewIssue(${i})" class="text-green-600">QR 바로가기</button>
-          <button onclick="toggleDetail(${i})" class="text-purple-600">내용 보기</button>
-        </div>
-        <div id="detail-${i}" class="hidden mt-2 p-2 bg-gray-100 rounded"></div>
-        <div class="mt-2" id="qr-${i}"></div>
-      </div>`;
-issueList.insertAdjacentHTML("beforeend", html);
-try {
-  generateQR(i);
-} catch (e) {
-  console.warn("QR 생성 실패:", e);
-}
+          <div id="detail-${issue.id}" class="hidden mt-2 p-2 bg-gray-100 rounded"></div>
+          <div class="mt-2" id="qr-${issue.id}"></div>
+        </div>`;
+      issueList.insertAdjacentHTML("beforeend", html);
+      // generate QR for each
+      try {
+        const qrDiv = document.getElementById("qr-" + issue.id);
+        qrDiv.innerHTML = "";
+        new QRCode(qrDiv, { text: window.location.origin + window.location.pathname + "?id=" + issue.id, width: 100, height: 100 });
+      } catch(e) {
+        console.warn("QR 실패", e);
+      }
+    });
 
-  });
+    // render recent
+    const recentList = document.getElementById("recentList");
+    recentList.innerHTML = "";
+    issues.slice(-3).reverse().forEach(issue => {
+      recentList.innerHTML += `<div class="border p-2 rounded bg-white">${issue.device} - ${issue.problem}</div>`;
+    });
 
-  renderRecent();
-}
-
-function renderRecent() {
-  recentList.innerHTML = "";
-  issues.slice(-3).reverse().forEach(issue => {
-    recentList.innerHTML += `<div class="border p-2 rounded bg-white">${issue.device} - ${issue.problem}</div>`;
-  });
-}
-
-/* ------------ 기타 기능 ------------- */
-function editIssue(i) { openModal(true, i); }
-
-function viewIssue(i) {
-  const qrDiv = document.getElementById("qr-" + i);
-  if (qrDiv.innerHTML.trim() !== "") {
-    qrDiv.innerHTML = "";
-    return;
-  }
-
-const url = window.location.origin + window.location.pathname + "?id=" + issues[i].id;
-
-  qrDiv.innerHTML = `
-    <div class="p-2 border rounded bg-gray-50 mt-2 inline-block text-center">
-      <div id="show-qr-${i}" class="flex justify-center mb-2"></div>
-      <div class="break-all text-left">
-        <b>URL:</b>
-        <a href="${url}" target="_blank" class="text-blue-600 underline">${url}</a>
-      </div>
-      <button onclick="copyToClipboard('${url}')" class="mt-2 bg-gray-200 text-sm px-2 py-1 rounded hover:bg-gray-300">URL 복사</button>
-    </div>
-  `;
-  new QRCode(document.getElementById("show-qr-" + i), { text: url, width: 120, height: 120 });
-}
-
-function deleteIssue(i) {
-  if (confirm("정말 이 고장내역을 삭제할까요?")) {
-    issues.splice(i, 1);
-    localStorage.setItem('issues', JSON.stringify(issues));
-    renderIssues();
+  } catch (e) {
+    console.error("렌더 오류:", e);
   }
 }
 
-function generateQR(i) {
-  const qrDiv = document.getElementById("qr-"+i);
-  qrDiv.innerHTML = "";
-  new QRCode(qrDiv, { text: window.location.origin + window.location.pathname + "?issue=" + encodeURIComponent(JSON.stringify(issues[i])), width: 100, height: 100 });
+async function deleteIssue(id) {
+  if (!confirm("정말 삭제할까요?")) return;
+  try {
+    await window.deleteDoc(window.doc(window.db, "issues", id));
+    await renderIssues();
+  } catch (e) {
+    console.error(e);
+    alert("삭제 실패");
+  }
 }
 
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(()=>alert("URL이 복사되었습니다 ✅"));
 }
 
-function toggleDetail(i) {
-  const detailDiv = document.getElementById("detail-" + i);
+async function toggleDetail(id) {
+  const detailDiv = document.getElementById("detail-" + id);
   if (!detailDiv) return;
-
   if (!detailDiv.classList.contains("hidden")) {
     detailDiv.classList.add("hidden");
     detailDiv.innerHTML = "";
   } else {
-    const issue = issues[i];
+    // find issue in currentIssues
+    const issue = currentIssues.find(x => x.id === id);
+    if (!issue) return;
     detailDiv.classList.remove("hidden");
     detailDiv.innerHTML = `
       <p><b>사고 내용:</b> ${issue.problem}</p>
@@ -414,16 +426,16 @@ document.getElementById("scanBtn").addEventListener("click", () => {
 
   html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, (decodedText) => {
     try {
-      const issue = JSON.parse(decodedText);
+      const obj = JSON.parse(decodedText);
       readerDiv.innerHTML = `
         <div class="p-4 bg-white rounded-lg shadow text-left">
           <h2 class="text-xl font-semibold mb-2">QR 코드 스캔 결과</h2>
-          <p><b>지역:</b> ${issue.region}</p>
-          <p><b>지점:</b> ${issue.location}</p>
-          <p><b>물건명:</b> ${issue.device}</p>
-          <p><b>사고 내용:</b> ${issue.problem}</p>
+          <p><b>지역:</b> ${obj.region}</p>
+          <p><b>지점:</b> ${obj.location}</p>
+          <p><b>물건명:</b> ${obj.device}</p>
+          <p><b>사고 내용:</b> ${obj.problem}</p>
           <h3 class="mt-2 font-bold">해결 단계</h3>
-          <ol class="list-decimal list-inside">${(issue.solutions || []).map(sol => (sol.steps || []).map(s=>`<li>${s.text || ''}</li>`).join('')).join('')}</ol>
+          <ol class="list-decimal list-inside">${(obj.solutions || []).map(sol => (sol.steps || []).map(s=>`<li>${s.text || ''}</li>`).join('')).join('')}</ol>
         </div>`;
       html5QrCode.stop();
     } catch (e) {
@@ -434,56 +446,118 @@ document.getElementById("scanBtn").addEventListener("click", () => {
   });
 });
 
-// URL 파라미터 읽기 (id로 해당 내역 자동 표시)
-const urlParams = new URLSearchParams(window.location.search);
-const targetId = urlParams.get("id");
-if (targetId) {
-  const saved = JSON.parse(localStorage.getItem("issues") || "[]");
-  const target = saved.find(x => String(x.id) === targetId);
-  if (target) {
-    document.body.innerHTML = `
-      <div class="max-w-3xl mx-auto p-6">
-        <h1 class="text-3xl font-bold mb-4">고장 내역 상세보기</h1>
-        <p><b>지역:</b> ${target.region}</p>
-        <p><b>지점:</b> ${target.location}</p>
-        <p><b>물건명:</b> ${target.device}</p>
-        <p><b>사고 내용:</b> ${target.problem}</p>
-        ${target.problemImg ? `<img src="${target.problemImg}" class="mt-2 rounded border max-h-60">` : ""}
-        ${(target.solutions || []).map((sol, idx) => `
-          <div class="mt-4">
-            <p class="font-semibold">[${idx + 1}] 해결방법</p>
-            <ol class="list-decimal list-inside">
-              ${(sol.steps || []).map(s => `
-                <li>${s.text || ''}${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}</li>
-              `).join('')}
-            </ol>
-          </div>
-        `).join('')}
-        <div class="mt-6">
-          <a href="${window.location.origin + window.location.pathname}" class="text-blue-600 underline">← 목록으로 돌아가기</a>
-        </div>
-      </div>
-    `;
-  }
-}
-
-/* 초기 렌더 & 이벤트 바인딩 */
-window.addEventListener("DOMContentLoaded", () => {
-  // 버튼 및 입력창 이벤트 연결
+// DOMContentLoaded - bind events and initial render, and check URL param
+window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("addBtn").onclick = () => openModal();
   document.getElementById("cancelBtn").onclick = closeModal;
   document.getElementById("saveBtn").onclick = saveIssue;
   document.getElementById("addSolutionBtn").onclick = addSolution;
   document.getElementById("searchInput").addEventListener("input", e => renderIssues(e.target.value.toLowerCase()));
 
-  // 로컬 저장소 불러오기 및 초기 렌더
-  if (!localStorage.getItem("issues")) localStorage.setItem("issues", "[]");
-  issues = JSON.parse(localStorage.getItem("issues") || "[]");
-  renderIssues();
+  await renderIssues();
+
+  // if URL has ?id=..., show single doc view
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  if (id) {
+    try {
+      const docRef = window.doc(window.db, "issues", id);
+      const docSnap = await window.getDoc(docRef);
+      if (!docSnap.exists()) {
+        alert("해당 내역을 찾을 수 없습니다.");
+        return;
+      }
+      const d = docSnap.data();
+      document.body.innerHTML = `
+        <div class="max-w-3xl mx-auto p-6">
+          <h1 class="text-3xl font-bold mb-2">${d.device}</h1>
+          <p><b>지역:</b> ${d.region}</p>
+          <p><b>지점:</b> ${d.location}</p>
+          <p class="mt-2">${d.problem}</p>
+          ${d.problemImg ? `<img src="${d.problemImg}" class="mt-3 max-h-60 rounded border">` : ""}
+          ${(d.solutions || []).map((sol, idx) => `
+            <div class="mt-4">
+              <p class="font-semibold">[${idx + 1}] 해결방법</p>
+              <ol class="list-decimal list-inside">
+                ${(sol.steps || []).map(s => `<li>${s.text || ''}${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}</li>`).join('')}
+              </ol>
+            </div>
+          `).join('')}
+          <div class="mt-6">
+            <a href="${window.location.origin + window.location.pathname}" class="text-blue-600 underline">← 목록으로 돌아가기</a>
+          </div>
+        </div>
+      `;
+    } catch (e) {
+      console.error(e);
+      alert("로드 실패");
+    }
+  }
 });
+function viewIssue(id) {
+  // QR 코드용 URL
+  const url = window.location.origin + window.location.pathname + "?id=" + id;
+  // 이동하거나 복사 선택
+  if (confirm("QR 주소로 바로 이동할까요?")) {
+    window.location.href = url;
+  } else {
+    navigator.clipboard.writeText(url);
+    alert("URL이 복사되었습니다 ✅");
+  }
+}
+async function generateQRCodeAndCopy(id) {
+  const qrDiv = document.getElementById("qr-" + id);
+  qrDiv.innerHTML = ""; // 기존 QR 초기화
+  const url = window.location.origin + window.location.pathname + "?id=" + id;
+
+  // QR 코드 생성
+  new QRCode(qrDiv, {
+    text: url,
+    width: 120,
+    height: 120
+  });
+
+  // URL 복사 기능
+  try {
+    await navigator.clipboard.writeText(url);
+    alert("QR 코드가 생성되었고 URL이 복사되었습니다 ✅\n(붙여넣기하면 바로 접속 가능)");
+  } catch {
+    alert("QR 생성은 완료되었지만 URL 복사에 실패했습니다.");
+  }
+}
+
+function showLargeQR(id) {
+  const modal = document.getElementById('qrModal');
+  const qrContainer = document.getElementById('qrLargeContainer');
+  qrContainer.innerHTML = ''; // 초기화
+  const url = window.location.origin + window.location.pathname + "?id=" + id;
+
+  // QR 코드 크게 생성
+  new QRCode(qrContainer, {
+    text: url,
+    width: 250,
+    height: 250
+  });
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeQRModal() {
+  const modal = document.getElementById('qrModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
 
 </script>
-
-
+<!-- QR 코드 큰 이미지 모달 -->
+<div id="qrModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-xl shadow-xl text-center relative">
+    <button onclick="closeQRModal()" class="absolute top-2 right-2 text-gray-500 hover:text-red-500">✖</button>
+    <h2 class="text-lg font-semibold mb-4">QR 코드</h2>
+    <div id="qrLargeContainer" class="flex justify-center"></div>
+  </div>
+</div>
 </body>
 </html>
