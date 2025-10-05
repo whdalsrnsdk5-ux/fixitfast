@@ -165,7 +165,8 @@ function addSolution() {
 }
 
 function openModal(edit=false, docId=null) {
-  editDocId = null;
+  if (!edit) editDocId = null;
+
   const modal = document.getElementById('modal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
