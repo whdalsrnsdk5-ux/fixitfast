@@ -235,9 +235,11 @@ async function saveIssue() {
   // problem image
   let problemImg = '';
   const problemPhotoInput = document.getElementById('problemPhoto');
-  if (problemPhotoInput && problemPhotoInput.files.length > 0) {
-    problemImg = await toBase64(problemPhotoInput.files[0]);
-  }
+if (problemPhotoInput && problemPhotoInput.files.length > 0) {
+  const file = problemPhotoInput.files[0];
+  problemImg = URL.createObjectURL(file); // Blob URL로 변환 (메모리 링크)
+}
+
 
   const solutions = [];
   const solutionEls = document.querySelectorAll('.solution-item');
