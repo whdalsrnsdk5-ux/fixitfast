@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FixItFast</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <div class="max-w-3xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-center mb-6">FixItFast</h1>
+
+    <div class="text-center mb-4">
+      <button id="scanBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">QR 코드 스캔하기</button>
+      <div id="reader" class="mt-4"></div>
+    </div>
+
+    <div class="text-center mb-4">
+      <button id="addBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">+ 고장 내역 추가</button>
+    </div>
+
+    <div class="flex items-center mb-6">
+      <input id="searchInput" type="text" placeholder="검색어 입력 (자동 필터링)" class="flex-grow border rounded-lg px-3 py-2">
+    </div>
+
+    <h2 class="text-xl font-semibold mb-2">등록된 고장내역 (전체)</h2>
+    <div id="issueList" class="space-y-4 mb-8"></div>
+
+    <h2 class="text-xl font-semibold mb-2">최근 등록/수정된 내역</h2>
+    <div id="recentList" class="space-y-2"></div>
+  </div>
+
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+      <h2 id="modalTitle" class="text-xl font-semibold mb-4">고장 내역 등록</h2>
+
+      <input id="region" placeholder="지역" class="w-full border mb-2 p-2 rounded">
+      <input id="location" placeholder="지점" class="w-full border mb-2 p-2 rounded">
+      <input id="device" placeholder="물건명" class="w-full border mb-2 p-2 rounded">
+      <input id="problem" placeholder="사고 내용" class="w-full border mb-2 p-2 rounded">
+
+      <div id="stepsContainer" class="space-y-2 mb-2">
+        <input placeholder="1단계 해결방법" class="step-input w-full border p-2 rounded">
+      </div>
+      <button id="addStepBtn" class="bg-gray-200 text-sm px-2 py-1 rounded mb-4">+ 단계 추가</button>
+
+      <input id="photo" type="file" accept="image/*" class="w-full mb-4">
+
+      <div class="sticky bottom-0 bg-white py-3 flex justify-end space-x-2 border-t">
+        <button id="saveBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">저장</button>
+        <button id="cancelBtn" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">취소</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
