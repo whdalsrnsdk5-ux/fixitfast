@@ -419,29 +419,38 @@ async function toggleDetail(id) {
   }
 }
 
-/* QR 스캔 (html5-qrcode) 개선 버전 */
 let qrActive = false;
+const scanBtn = document.getElementById("scanBtn");
 
-document.getElementById("scanBtn").addEventListener("click", async () => {
-  if (qrActive) return; // 이미 실행 중이면 중복 방지
+scanBtn.addEventListener("click", () => {
+  if (qrActive) return;
   qrActive = true;
 
   const readerDiv = document.getElementById("reader");
   readerDiv.innerHTML = "";
-  const html5QrCode = new Html5Qrcode("reader");
 
   try {
-    await html5QrCode.start(
-      { facingMode: { ideal: "environment" } },  // ✅ 후면 우선, 불가시 전면 자동
+    const html5QrCode = new Html5Qrcode("reader");
+
+    // ✅ 버튼 클릭 시 바로 start() 실행 (사용자 제스처 안에서)
+    html5QrCode.start(
+      { facingMode: { ideal: "environment" } },  // 후면 카메라 우선
       { fps: 10, qrbox: { width: 250, height: 250 } },
       (decodedText) => {
-        alert("QR 코드 인식됨 ✅\n" + decodedText);
-        html5QrCode.stop();
-        qrActive = false;
+        html5QrCode.stop().then(() => {
+          qrActive = false;
+          window.location.href = decodedText; // ✅ QR 주소로 바로 이동
+        });
+      },
+      (errorMsg) => {
+        console.log("인식 중...", errorMsg);
       }
-    );
+    ).catch((err) => {
+      alert("카메라 접근 실패 ❌\n" + err);
+      qrActive = false;
+    });
   } catch (e) {
-    alert("카메라 접근 실패 ❌ (브라우저 권한 확인)");
+    alert("QR 스캔 오류 ❌");
     console.error(e);
     qrActive = false;
   }
