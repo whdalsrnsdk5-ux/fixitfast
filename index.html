@@ -53,8 +53,12 @@
 
       <label class="font-semibold">사고 내용</label>
       <textarea id="problem" class="w-full border mb-2 p-2 rounded" rows="2"></textarea>
-      <input id="problemPhoto" type="file" accept="image/*" class="w-full mb-2">
-      <img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
+  <div class="flex items-center space-x-2 mb-2">
+  <input id="problemPhoto" type="file" accept="image/*" class="flex-grow border p-1 rounded">
+  <button type="button" id="cameraProblemBtn" class="bg-gray-200 px-2 py-1 rounded">📸 카메라</button>
+</div>
+<img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
+
 
       <div id="solutionsContainer" class="space-y-4 mb-4"></div>
       <button id="addSolutionBtn" class="bg-blue-200 text-sm px-3 py-1 rounded">+ 해결방법 추가</button>
@@ -115,14 +119,18 @@ function toBase64(file) {
 function addStep(container) {
   const stepDiv = document.createElement('div');
   stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
-  stepDiv.innerHTML = `
-    <div class="flex justify-between items-center">
-      <input placeholder="단계 설명" class="step-input w-full border p-2 rounded mb-1">
-      <button class="removeStep text-red-500 text-sm ml-2">X</button>
-    </div>
-    <input type="file" accept="image/*" class="step-image w-full">
-    <img class="step-preview hidden mt-2 max-h-32 rounded border">
-  `;
+stepDiv.innerHTML = `
+  <div class="flex justify-between items-center">
+    <input placeholder="단계 설명" class="step-input w-full border p-2 rounded mb-1">
+    <button class="removeStep text-red-500 text-sm ml-2">X</button>
+  </div>
+  <div class="flex items-center space-x-2">
+    <input type="file" accept="image/*" class="step-image flex-grow border p-1 rounded">
+    <button type="button" class="cameraBtn bg-gray-200 px-2 py-1 rounded">📸</button>
+  </div>
+  <img class="step-preview hidden mt-2 max-h-32 rounded border">
+`;
+
   stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
 
   const fileInput = stepDiv.querySelector('.step-image');
@@ -558,6 +566,49 @@ function closeQRModal() {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
 }
+
+// 📸 카메라 버튼 공통 기능
+document.addEventListener("click", async (e) => {
+  // 1️⃣ 사고 내용 사진
+  if (e.target.id === "cameraProblemBtn") {
+    const input = document.getElementById("problemPhoto");
+    input.setAttribute("capture", "environment"); // 후면 카메라 우선
+    input.click();
+    input.onchange = () => {
+      const file = input.files[0];
+      if (file) {
+        const preview = document.getElementById("problemPreview");
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          preview.src = evt.target.result;
+          preview.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+
+  // 2️⃣ 단계 내 카메라 버튼
+  if (e.target.classList.contains("cameraBtn")) {
+    const parent = e.target.closest(".step-item");
+    const input = parent.querySelector(".step-image");
+    const preview = parent.querySelector(".step-preview");
+    input.setAttribute("capture", "environment");
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          preview.src = evt.target.result;
+          preview.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+});
 
 
 </script>
