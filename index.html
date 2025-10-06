@@ -632,11 +632,7 @@ if (navigator.permissions) {
   });
 }
 
-
-// ✅ QR 코드 스캔하기 → 카메라 자동 실행 
-const scanBtn = document.getElementById("scanBtn");
-let qrActive = false;
-<script>
+// ✅ QR 코드 스캔하기 → 카메라 앱 열기 (사진 촬영용)
 const scanBtn = document.getElementById("scanBtn");
 
 scanBtn.addEventListener("click", () => {
@@ -650,10 +646,11 @@ scanBtn.addEventListener("click", () => {
     const file = input.files[0];
     if (file) {
       alert("📸 사진이 선택되었습니다: " + file.name);
-      // 필요하면 여기서 toBase64(file) 사용해서 처리 가능
+      // 필요 시 toBase64(file) 사용 가능
     }
   };
 });
+
 </script>
 
 
