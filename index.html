@@ -706,39 +706,23 @@ if (navigator.permissions) {
 <div id="reader" style="width:300px;height:300px;margin-top:10px;"></div>
 
 <!-- 3️⃣ 스크립트 -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+
+<div id="reader" style="width:300px;height:300px;"></div>
 <script>
-document.getElementById('qrCameraInput').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function() {
-    const img = new Image();
-    img.onload = function() {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      
-      // QR 분석
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, canvas.width, canvas.height);
-
-      if (code) {
-        alert('QR 코드 인식됨 ✅: ' + code.data);
-        window.location.href = code.data; // 바로 이동
-      } else {
-        alert('QR 코드를 인식하지 못했습니다 ❌');
-      }
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
-});
-
-
+const qrScanner = new Html5Qrcode("reader");
+qrScanner.start(
+  { facingMode: "environment" }, // 후면 카메라
+  { fps: 10, qrbox: { width: 250, height: 250 } },
+  decodedText => {
+    alert("QR 코드 인식됨 ✅: " + decodedText);
+    window.location.href = decodedText;
+    qrScanner.stop();
+  },
+  error => { console.log("인식 중...", error); }
+);
 </script>
+
 
 
 
