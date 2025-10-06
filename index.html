@@ -15,10 +15,17 @@
     <h1 class="text-3xl font-bold text-center mb-6">FixItFast</h1>
 
     <!-- QR 스캔 -->
+ 
     <div class="text-center mb-4">
-      <button id="scanBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">QR 코드 스캔하기</button>
-      <div id="reader" class="mt-4"></div>
-    </div>
+<!-- QR 스캔 버튼 (기본 카메라로 이동) -->
+<div class="text-center mb-4">
+  <label for="qrCameraInput" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer">
+    📷 QR 코드 스캔하기
+  </label>
+  <input id="qrCameraInput" type="file" accept="image/*" capture="environment" class="hidden" />
+</div>
+
+   
 
     <!-- 추가 버튼 -->
     <div class="text-center mb-4">
@@ -690,63 +697,6 @@ if (navigator.permissions) {
 </div>
 
 
-
-<!-- ✅ QR 스캐너 라이브러리 (정상 작동 버전) -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
-
-<!-- Firebase -->
-<script type="module">
-  ...Firebase 초기화 코드...
-</script>
-
-<!-- Main script -->
-<script>
-  ...openModal(), renderIssues(), saveIssue() 등...
-</script>
-
-<!-- ✅ QR 코드 스캐너 라이브러리 -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
-
-<!-- ✅ QR 스캔 기능 코드 -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const scanBtn = document.getElementById("scanBtn");
-  const reader = document.getElementById("reader");
-  let qrScanner = null;
-
-  scanBtn.addEventListener("click", async () => {
-    if (qrScanner) {
-      alert("이미 카메라가 켜져 있습니다.");
-      return;
-    }
-
-    if (typeof Html5Qrcode === "undefined") {
-      alert("QR 스캐너 라이브러리 로드 실패 ❌");
-      return;
-    }
-
-    reader.innerHTML = `<div id="qr-reader" style="width:300px;height:300px;margin:0 auto;"></div>`;
-    qrScanner = new Html5Qrcode("qr-reader");
-
-    try {
-      await qrScanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          alert("✅ QR 코드 인식됨: " + decodedText);
-          qrScanner.stop();
-          qrScanner = null;
-          reader.innerHTML = "";
-        }
-      );
-    } catch (err) {
-      alert("카메라 실행 실패 ❌: " + err.message);
-      console.error(err);
-      qrScanner = null;
-    }
-  });
-});
-</script>
 
 
 
