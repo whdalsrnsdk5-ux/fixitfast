@@ -675,40 +675,6 @@ if (navigator.permissions) {
   });
 }
 
-// ✅ QR 코드 스캔하기 → 카메라 열고 QR 인식만 (자동 이동 없음)
-document.addEventListener("DOMContentLoaded", () => {
-  const scanBtn = document.getElementById("scanBtn");
-  const readerDiv = document.getElementById("reader");
-  let qrActive = false;
-
-  scanBtn.addEventListener("click", async () => {
-    if (qrActive) return;
-    qrActive = true;
-    readerDiv.innerHTML = "";
-    readerDiv.style.display = "block";
-
-    const html5QrCode = new Html5Qrcode("reader");
-
-    try {
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          alert("✅ QR 코드 인식됨: " + decodedText);
-          html5QrCode.stop();
-          qrActive = false;
-        },
-        (errorMessage) => {
-          // 인식 실패는 무시 (계속 시도)
-        }
-      );
-    } catch (err) {
-      alert("❌ 카메라 접근 실패: " + err.message);
-      console.error(err);
-      qrActive = false;
-    }
-  });
-});
 
 
 
@@ -722,7 +688,37 @@ document.addEventListener("DOMContentLoaded", () => {
     <div id="qrLargeContainer" class="flex justify-center"></div>
   </div>
 </div>
+<!-- QR 코드 뷰어 -->
+<div id="reader" style="width: 300px; height: 300px;"></div>
+<!-- ✅ QR 코드 라이브러리 -->
+<script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
 
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
+<!-- ✅ QR 스캔 기능 (카메라 열기만) -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const scanBtn = document.getElementById("scanBtn");
+  const readerDiv = document.getElementById("reader");
+
+  scanBtn.addEventListener("click", async () => {
+    readerDiv.innerHTML = '<div id="reader-inner" style="width:300px;height:300px;margin:0 auto;"></div>';
+    readerDiv.style.display = "block";
+
+    try {
+      const html5QrCode = new Html5Qrcode("reader-inner");
+      await html5QrCode.start(
+        { facingMode: { ideal: "environment" } },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        () => {},  // 인식 콜백 제거
+        () => {}   // 오류 콜백 제거
+      );
+      console.log("✅ 카메라 실행됨");
+    } catch (err) {
+      alert("❌ 카메라 접근 실패: " + err.message);
+      console.error(err);
+    }
+  });
+});
+</script>
+
 </body>
 </html>
