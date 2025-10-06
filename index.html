@@ -42,17 +42,26 @@
    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
       <h2 id="modalTitle" class="text-xl font-semibold mb-4">고장 내역 등록</h2>
 
-      <label class="font-semibold">지역</label>
-      <input id="region" class="w-full border mb-2 p-2 rounded">
+      <div class="mb-2">
+  <label class="font-semibold mr-2">지역:</label>
+  <input id="region" class="w-full border p-2 rounded" placeholder="예: 서울">
+</div>
 
-      <label class="font-semibold">위치(지사-층수 )</label>
-      <input id="location" class="w-full border mb-2 p-2 rounded">
+<div class="mb-2">
+  <label class="font-semibold mr-2">위치(지사-층수):</label>
+  <input id="location" class="w-full border p-2 rounded" placeholder="예: 강남지사 3층">
+</div>
 
-      <label class="font-semibold">물건명</label>
-      <input id="device" class="w-full border mb-2 p-2 rounded">
+<div class="mb-2">
+  <label class="font-semibold mr-2">물건명:</label>
+  <input id="device" class="w-full border p-2 rounded" placeholder="예: 프린터기">
+</div>
 
-      <label class="font-semibold">사고 내용</label>
-      <textarea id="problem" class="w-full border mb-2 p-2 rounded" rows="2"></textarea>
+<div class="mb-2">
+  <label class="font-semibold mr-2">사고 내용:</label>
+  <textarea id="problem" class="w-full border p-2 rounded" rows="2" placeholder="예: 용지가 걸림"></textarea>
+</div>
+
  <div class="flex flex-wrap gap-2 items-center w-full mb-2">
   <input id="problemPhoto" type="file" accept="image/*" class="flex-grow border p-1 rounded w-full sm:w-auto">
   <button type="button" id="cameraProblemBtn"
@@ -477,6 +486,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       const d = docSnap.data();
       document.body.innerHTML = `
         <div class="max-w-3xl mx-auto p-6">
+<a href="index.html" class="text-blue-600 underline block mb-4">← 목록으로 돌아가기</a>
+
           <h1 class="text-3xl font-bold mb-2">${d.device}</h1>
           <p><b>지역:</b> ${d.region}</p>
           <p><b>지점:</b> ${d.location}</p>
