@@ -38,8 +38,8 @@
   </div>
 
 <!-- 등록 모달 -->
-  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto flex items-start justify-center">
-   <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center overflow-y-auto">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
       <h2 id="modalTitle" class="text-xl font-semibold mb-4">고장 내역 등록</h2>
 
       <label class="font-semibold">지역</label>
@@ -612,7 +612,7 @@ function toBase64(file) {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         // JPEG로 0.8 품질로 압축
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.4);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
         resolve(compressedDataUrl);
       };
       img.onerror = reject;
@@ -632,40 +632,24 @@ if (navigator.permissions) {
   });
 }
 
-// ✅ QR 코드 스캔하기 → 카메라 자동 실행 + QR 인식
+// ✅ QR 코드 스캔하기 → 카메라 앱 열기 (사진 촬영용)
 const scanBtn = document.getElementById("scanBtn");
-let qrActive = false;
 
-scanBtn.addEventListener("click", async () => {
-  if (qrActive) return;
-  qrActive = true;
+scanBtn.addEventListener("click", () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.capture = "environment"; // 후면 카메라 자동
+  input.click();
 
-  const readerDiv = document.getElementById("reader");
-  readerDiv.innerHTML = "";
-  readerDiv.style.display = "block";
-
-  // html5-qrcode 객체 생성
-  const html5QrCode = new Html5Qrcode("reader");
-
-  try {
-    // ✅ 후면 카메라 자동 실행 + QR 실시간 인식
-    await html5QrCode.start(
-      { facingMode: { ideal: "environment" } },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      (decodedText) => {
-        html5QrCode.stop();
-        qrActive = false;
-        alert("✅ QR 코드 인식 성공\n" + decodedText);
-        window.location.href = decodedText; // QR 안의 URL로 이동
-      }
-    );
-  } catch (err) {
-    alert("❌ 카메라 접근 실패: " + err.message);
-    console.error(err);
-    qrActive = false;
-  }
+  input.onchange = () => {
+    const file = input.files[0];
+    if (file) {
+      alert("📸 사진이 선택되었습니다: " + file.name);
+      // 필요 시 toBase64(file) 사용 가능
+    }
+  };
 });
-
 
 </script>
 
