@@ -631,25 +631,43 @@ if (navigator.permissions) {
     }
   });
 }
-
-// ✅ QR 코드 스캔하기 → 카메라 앱 열기 (사진 촬영용)
+// ✅ QR 코드 스캔하기 → 카메라 자동 실행 + QR 자동 인식
+let qrActive = false;
 const scanBtn = document.getElementById("scanBtn");
 
-scanBtn.addEventListener("click", () => {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-  input.capture = "environment"; // 후면 카메라 자동
-  input.click();
+scanBtn.addEventListener("click", async () => {
+  if (qrActive) return;
+  qrActive = true;
 
-  input.onchange = () => {
-    const file = input.files[0];
-    if (file) {
-      alert("📸 사진이 선택되었습니다: " + file.name);
-      // 필요 시 toBase64(file) 사용 가능
-    }
-  };
+  const readerDiv = document.getElementById("reader");
+  readerDiv.innerHTML = "";
+  readerDiv.style.display = "block";
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  try {
+    // ✅ 후면 카메라로 바로 스캔 시작
+    await html5QrCode.start(
+      { facingMode: { ideal: "environment" } },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decodedText) => {
+        // ✅ QR 코드 인식 시 바로 페이지 이동
+        html5QrCode.stop();
+        qrActive = false;
+        window.location.href = decodedText;
+      },
+      (errorMessage) => {
+        // 인식 실패 시 반복 로그 방지
+        console.warn("QR 인식 중...", errorMessage);
+      }
+    );
+  } catch (err) {
+    alert("❌ 카메라 접근 실패: " + err.message);
+    console.error(err);
+    qrActive = false;
+  }
 });
+
 
 </script>
 
