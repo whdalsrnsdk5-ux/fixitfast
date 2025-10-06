@@ -54,7 +54,8 @@
       <label class="font-semibold">사고 내용</label>
       <textarea id="problem" class="w-full border mb-2 p-2 rounded" rows="2"></textarea>
   <div class="flex items-center space-x-2 mb-2">
-  <input id="problemPhoto" type="file" accept="image/*" class="flex-grow border p-1 rounded">
+  <input id="problemPhoto" type="file" accept="image/*" capture="environment" class="flex-grow border p-1 rounded">
+
   <button type="button" id="cameraProblemBtn" class="bg-gray-200 px-2 py-1 rounded">📸 카메라</button>
 </div>
 <img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
@@ -127,7 +128,8 @@ stepDiv.innerHTML = `
     <button class="removeStep text-red-500 text-sm ml-2">X</button>
   </div>
   <div class="flex items-center space-x-2">
-    <input type="file" accept="image/*" class="step-image flex-grow border p-1 rounded">
+    <input type="file" accept="image/*" capture="environment" class="step-image flex-grow border p-1 rounded">
+
     <button type="button" class="cameraBtn bg-gray-200 px-2 py-1 rounded">📸</button>
   </div>
   <img class="step-preview hidden mt-2 max-h-32 rounded border">
@@ -232,7 +234,8 @@ function openModal(edit=false, docId=null) {
               <input value="${s.text || ''}" class="step-input w-full border p-2 rounded mb-1">
               <button class="removeStep text-red-500 text-sm ml-2">X</button>
             </div>
-            <input type="file" accept="image/*" class="step-image w-full">
+            <input type="file" accept="image/*" capture="environment" class="step-image w-full">
+
             ${s.img ? `<img src="${s.img}" class="step-preview mt-2 max-h-32 rounded border">` : `<img class="step-preview hidden mt-2 max-h-32 rounded border">`}
           `;
           stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
@@ -255,6 +258,9 @@ function closeModal() {
 
 /* Save (create or update) */
 async function saveIssue() {
+document.getElementById('saveBtn').disabled = true;
+document.getElementById('saveBtn').textContent = "⏳ 저장 중...";
+
   const region = document.getElementById('region').value;
   const location = document.getElementById('location').value;
   const device = document.getElementById('device').value;
@@ -315,6 +321,11 @@ steps.push({ text, img });
   } catch (e) {
     console.error("저장 오류:", e);
     alert("저장 실패 ❌ (콘솔 확인)");
+} finally {
+  document.getElementById('saveBtn').disabled = false;
+  document.getElementById('saveBtn').textContent = "저장";
+
+
   }
 }
 
@@ -621,11 +632,15 @@ document.addEventListener("click", async (e) => {
 function toBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => {
+      // 모바일에서 변환이 느릴 때 약간의 대기 시간 추가
+      setTimeout(() => resolve(reader.result), 200);
+    };
     reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
   });
 }
+
 
 
 </script>
