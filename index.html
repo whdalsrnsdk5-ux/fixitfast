@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FixItFast - Firebase Fixed</title>
 
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -17,16 +17,11 @@
     <!-- QR 스캔 -->
  
     <div class="text-center mb-4">
-<!-- QR 스캔 버튼 (기본 카메라로 이동) -->
-<div class="text-center mb-4">
-  <label for="qrCameraInput" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer">
-  📷 QR 코드 스캔하기
-</label>
-<input id="qrCameraInput" type="file" accept="image/*" capture="environment" class="hidden">
-
+  <p class="text-gray-700">📱 QR 코드 스캔은 휴대폰 기본 카메라로 하세요.</p>
+ 
 </div>
 
-   
+    </div>
 
     <!-- 추가 버튼 -->
     <div class="text-center mb-4">
@@ -663,7 +658,7 @@ function toBase64(file) {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         // JPEG로 0.8 품질로 압축
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.4);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.2);
         resolve(compressedDataUrl);
       };
       img.onerror = reject;
@@ -697,49 +692,6 @@ if (navigator.permissions) {
   </div>
 </div>
 
-
-<!-- html5-qrcode 라이브러리 -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
-
-<!-- QR 스캔 버튼 + 미리보기 -->
-<div class="text-center mt-4">
-  <button id="scanBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-    📷 QR 코드 스캔하기
-  </button>
-</div>
-<div id="reader" style="width:300px;height:300px;margin:10px auto;"></div>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const scanBtn = document.getElementById("scanBtn");
-  const reader = document.getElementById("reader");
-  let qrScanner = null;
-
-  scanBtn.addEventListener("click", async () => {
-    if (!qrScanner) {
-      qrScanner = new Html5Qrcode("reader");
-    }
-
-    try {
-      await qrScanner.start(
-        { facingMode: "environment" }, // 후면 카메라
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        decodedText => {
-          alert("QR 코드 인식됨 ✅: " + decodedText);
-          qrScanner.stop(); // 스캔 중지
-          window.location.href = decodedText;
-        },
-        error => {
-          console.log("인식 중...", error);
-        }
-      );
-    } catch (e) {
-      console.error("QR 스캔 오류:", e);
-      alert("카메라 접근 또는 스캔 오류가 발생했습니다 ❌");
-    }
-  });
-});
-</script>
 
 
 
