@@ -419,7 +419,6 @@ async function toggleDetail(id) {
   }
 }
 
-/* QR 스캔 (html5-qrcode) 개선 버전 */
 let qrActive = false;
 const scanBtn = document.getElementById("scanBtn");
 
@@ -456,7 +455,6 @@ scanBtn.addEventListener("click", () => {
     qrActive = false;
   }
 });
-
 
 // DOMContentLoaded - bind events and initial render, and check URL param
 window.addEventListener("DOMContentLoaded", async () => {
