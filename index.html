@@ -690,56 +690,50 @@ if (navigator.permissions) {
 </div>
 
 
-<!-- ✅ QR 코드 스캔 기능 (2025 최신 CDN + 단순 카메라 + 인식만) -->
-<!-- QR 스캐너 라이브러리 -->
-<script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+
+<!-- ✅ QR 스캐너 라이브러리 (공식 최신 안정 버전) -->
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const scanBtn = document.getElementById("scanBtn");
   const reader = document.getElementById("reader");
-
-  if (!scanBtn || !reader) return;
-
   let qrScanner = null;
 
   scanBtn.addEventListener("click", async () => {
-    // 이미 실행 중이면 무시
     if (qrScanner) {
       alert("이미 카메라가 켜져 있습니다.");
       return;
     }
 
-    // Html5Qrcode 존재 확인
     if (typeof Html5Qrcode === "undefined") {
-      alert("QR 스캐너 라이브러리 로드 실패");
+      alert("QR 스캐너 라이브러리 로드 실패 ❌");
       return;
     }
 
     reader.innerHTML = `<div id="qr-reader" style="width:300px;height:300px;margin:0 auto;"></div>`;
-    reader.style.display = "block";
-
     qrScanner = new Html5Qrcode("qr-reader");
 
     try {
       await qrScanner.start(
-        { facingMode: "environment" },
+        { facingMode: "environment" }, // 후면 카메라
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
           alert("✅ QR 코드 인식됨: " + decodedText);
           qrScanner.stop();
-          reader.innerHTML = "";
           qrScanner = null;
+          reader.innerHTML = "";
         }
       );
     } catch (err) {
-      alert("카메라 실행 실패: " + err.message);
+      alert("카메라 실행 실패 ❌: " + err.message);
       console.error(err);
       qrScanner = null;
     }
   });
 });
 </script>
+
 
 </body>
 </html>
