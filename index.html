@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FixItFast - Firebase Fixed</title>
 
-
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -713,13 +713,30 @@ document.getElementById('qrCameraInput').addEventListener('change', function(e) 
 
   const reader = new FileReader();
   reader.onload = function() {
-    // qrcodejs 라이브러리로 이미지 인식
-    const imgData = reader.result;
-    // 여기서 QR 코드 인식
-    const qr = new QrScanner.QrCode(); // qrcodejs 대신 modern qr decoder 사용
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // QR 분석
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+      if (code) {
+        alert('QR 코드 인식됨 ✅: ' + code.data);
+        window.location.href = code.data; // 바로 이동
+      } else {
+        alert('QR 코드를 인식하지 못했습니다 ❌');
+      }
+    };
+    img.src = reader.result;
   };
   reader.readAsDataURL(file);
 });
+
 
 </script>
 
