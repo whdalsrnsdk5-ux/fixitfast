@@ -702,7 +702,8 @@ if (navigator.permissions) {
   - 카메라 실행 → 인식 시 alert (자동 이동 없음)
 */
 (function(){
-  const CDN = "https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.10/minified/html5-qrcode.min.js";
+  const CDN = "https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js";
+
 
   function loadScriptOnce(src) {
     return new Promise((resolve, reject) => {
