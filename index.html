@@ -73,6 +73,8 @@
 <!-- Firebase module (must be module to use v10 API) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
+
   import {
     getFirestore, collection, addDoc, getDocs, query, orderBy, doc, getDoc, deleteDoc, updateDoc
   } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
@@ -81,13 +83,19 @@
     apiKey: "AIzaSyA75TRjxqZusMTv9J7SpChNqavgZQH5LeI",
     authDomain: "fixitfast-web.firebaseapp.com",
     projectId: "fixitfast-web",
-    storageBucket: "fixitfast-web.firebasestorage.app",
+   storageBucket: "fixitfast-web.appspot.com",
+
     messagingSenderId: "609762639355",
     appId: "1:609762639355:web:a8a39674fe5f806f085f5e"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+const storage = getStorage(app);
+window.storage = storage;
+window.ref = ref;
+window.uploadString = uploadString;
+window.getDownloadURL = getDownloadURL;
 
   // expose to window so non-module script can use them
   window.db = db;
@@ -262,8 +270,14 @@ let problemImg = '';
 const problemPhotoInput = document.getElementById('problemPhoto');
 const oldImg = document.getElementById('problemPreview').src;
 if (problemPhotoInput.files.length > 0) {
-  problemImg = await toBase64(problemPhotoInput.files[0]);
-} else if (oldImg) {
+  const base64 = await toBase64(problemPhotoInput.files[0]);
+  const storageRef = window.ref(window.storage, "images/" + Date.now() + "_problem.jpg");
+  await window.uploadString(storageRef, base64, "data_url");
+  problemImg = await window.getDownloadURL(storageRef);
+}
+
+
+else if (oldImg) {
   problemImg = oldImg; // 기존 이미지 유지
 }
 
@@ -279,9 +293,16 @@ if (problemPhotoInput.files.length > 0) {
       const imgInput = stepEl.querySelector('.step-image');
    
  const oldPreview = stepEl.querySelector('.step-preview');
+
 if (imgInput && imgInput.files.length > 0) {
-  img = await toBase64(imgInput.files[0]);
-} else if (oldPreview && oldPreview.src) {
+  const base64 = await toBase64(imgInput.files[0]);
+  const storageRef = window.ref(window.storage, "images/" + Date.now() + "_step.jpg");
+  await window.uploadString(storageRef, base64, "data_url");
+  img = await window.getDownloadURL(storageRef);
+}
+
+
+else if (oldPreview && oldPreview.src) {
   img = oldPreview.src; // 기존 이미지 유지
 }
 steps.push({ text, img });
