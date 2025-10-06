@@ -631,9 +631,10 @@ if (navigator.permissions) {
     }
   });
 }
-// ✅ QR 코드 스캔하기 → 카메라 자동 실행 + QR 자동 인식
-let qrActive = false;
+
+// ✅ QR 코드 스캔하기 → 카메라 자동 실행 + QR 인식
 const scanBtn = document.getElementById("scanBtn");
+let qrActive = false;
 
 scanBtn.addEventListener("click", async () => {
   if (qrActive) return;
@@ -643,22 +644,19 @@ scanBtn.addEventListener("click", async () => {
   readerDiv.innerHTML = "";
   readerDiv.style.display = "block";
 
+  // html5-qrcode 객체 생성
   const html5QrCode = new Html5Qrcode("reader");
 
   try {
-    // ✅ 후면 카메라로 바로 스캔 시작
+    // ✅ 후면 카메라 자동 실행 + QR 실시간 인식
     await html5QrCode.start(
       { facingMode: { ideal: "environment" } },
       { fps: 10, qrbox: { width: 250, height: 250 } },
       (decodedText) => {
-        // ✅ QR 코드 인식 시 바로 페이지 이동
         html5QrCode.stop();
         qrActive = false;
-        window.location.href = decodedText;
-      },
-      (errorMessage) => {
-        // 인식 실패 시 반복 로그 방지
-        console.warn("QR 인식 중...", errorMessage);
+        alert("✅ QR 코드 인식 성공\n" + decodedText);
+        window.location.href = decodedText; // QR 안의 URL로 이동
       }
     );
   } catch (err) {
