@@ -697,6 +697,36 @@ if (navigator.permissions) {
 </div>
 
 
+<!-- 1️⃣ 라이브러리 불러오기 -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+
+<!-- 2️⃣ 버튼과 스캔 영역 -->
+<button id="scanBtn">📷 QR 코드 스캔하기</button>
+<div id="reader" style="width:300px;height:300px;margin-top:10px;"></div>
+
+<!-- 3️⃣ 스크립트 -->
+<script>
+document.getElementById("scanBtn").addEventListener("click", () => {
+  const reader = document.getElementById("reader");
+  reader.innerHTML = ""; // 초기화
+  const qrScanner = new Html5Qrcode("reader");
+
+  qrScanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    (decodedText) => {
+      alert("QR 인식됨 ✅: " + decodedText);
+      window.location.href = decodedText; // 바로 이동 가능
+      qrScanner.stop();
+    },
+    (errorMessage) => {
+      console.log("인식 중...", errorMessage);
+    }
+  ).catch(err => {
+    alert("카메라 실행 실패 ❌: " + err);
+  });
+});
+</script>
 
 
 
