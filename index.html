@@ -38,8 +38,8 @@
   </div>
 
 <!-- 등록 모달 -->
-  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center overflow-y-auto">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto flex items-start justify-center">
+   <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
       <h2 id="modalTitle" class="text-xl font-semibold mb-4">고장 내역 등록</h2>
 
       <label class="font-semibold">지역</label>
@@ -53,11 +53,14 @@
 
       <label class="font-semibold">사고 내용</label>
       <textarea id="problem" class="w-full border mb-2 p-2 rounded" rows="2"></textarea>
-  <div class="flex items-center space-x-2 mb-2">
-  <input id="problemPhoto" type="file" accept="image/*"  class="flex-grow border p-1 rounded">
-
-  <button type="button" id="cameraProblemBtn" class="bg-gray-200 px-2 py-1 rounded">📸 카메라</button>
+ <div class="flex flex-wrap gap-2 items-center w-full mb-2">
+  <input id="problemPhoto" type="file" accept="image/*" class="flex-grow border p-1 rounded w-full sm:w-auto">
+  <button type="button" id="cameraProblemBtn"
+    class="border p-2 rounded bg-gray-200 hover:bg-gray-300 text-sm w-full sm:w-auto">
+    📸 카메라
+  </button>
 </div>
+
 <img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
 
 
@@ -127,11 +130,11 @@ stepDiv.innerHTML = `
     <input placeholder="단계 설명" class="step-input w-full border p-2 rounded mb-1">
     <button class="removeStep text-red-500 text-sm ml-2">X</button>
   </div>
-  <div class="flex items-center space-x-2">
-    <input type="file" accept="image/*"  class="step-image flex-grow border p-1 rounded">
+ <div class="flex flex-wrap gap-2 items-center w-full">
+  <input type="file" accept="image/*" class="step-image flex-grow border p-1 rounded w-full sm:w-auto">
+  <button type="button" class="cameraBtn border p-2 rounded bg-gray-200 hover:bg-gray-300 text-sm w-full sm:w-auto">📸 카메라</button>
+</div>
 
-    <button type="button" class="cameraBtn bg-gray-200 px-2 py-1 rounded">📸</button>
-  </div>
   <img class="step-preview hidden mt-2 max-h-32 rounded border">
 `;
 
@@ -612,7 +615,7 @@ function toBase64(file) {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         // JPEG로 0.8 품질로 압축
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.4);
         resolve(compressedDataUrl);
       };
       img.onerror = reject;
