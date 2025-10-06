@@ -674,49 +674,26 @@ if (navigator.permissions) {
   });
 }
 
-// ✅ QR 코드 스캔하기 → 카메라 열고, 인식 결과만 표시 (자동 이동 없음)
+// ✅ QR 코드 스캔하기 → 단순히 카메라 실행 (QR 인식 없음)
 document.addEventListener("DOMContentLoaded", () => {
   const scanBtn = document.getElementById("scanBtn");
-  let qrActive = false;
-  let html5QrCode = null;
 
-  scanBtn.addEventListener("click", async () => {
-    try {
-      if (qrActive) return;
-      qrActive = true;
+  scanBtn.addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.capture = "environment"; // 후면 카메라
+    input.click();
 
-      const readerDiv = document.getElementById("reader");
-      readerDiv.innerHTML = "";
-      readerDiv.style.display = "block";
-
-      if (html5QrCode) {
-        await html5QrCode.stop().catch(() => {});
-        html5QrCode.clear();
+    input.onchange = () => {
+      const file = input.files[0];
+      if (file) {
+        alert("📸 사진이 촬영되었습니다.\n(QR 인식 없이 카메라만 실행)");
       }
-
-      html5QrCode = new Html5Qrcode("reader");
-
-      // ✅ QR 인식은 되지만 자동 이동은 없음
-      await html5QrCode.start(
-        { facingMode: { ideal: "environment" } },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          // 인식된 텍스트를 화면에 보여주기만 함
-          alert("✅ QR 코드 인식됨:\n" + decodedText);
-          html5QrCode.stop();
-          qrActive = false;
-        },
-        (errorMessage) => {
-          // QR 인식 실패 시 조용히 무시
-        }
-      );
-    } catch (err) {
-      alert("❌ 카메라 접근 실패\n브라우저에서 카메라 권한을 허용해주세요.");
-      console.error(err);
-      qrActive = false;
-    }
+    };
   });
 });
+
 
 
 
