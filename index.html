@@ -1,83 +1,65 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FixItFast - Firebase Fixed</title>
-
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FixItFast - Fixed</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
   <div class="max-w-3xl mx-auto p-6">
-
     <h1 class="text-3xl font-bold text-center mb-6">FixItFast</h1>
-
-    <!-- QR 스캔 -->
- 
     <div class="text-center mb-4">
-  <p class="text-gray-700">📱 QR 코드 스캔은 휴대폰 기본 카메라로 하세요.</p>
- 
-</div>
-
+      <p class="text-gray-700">📱 QR 코드 스캔은 휴대폰 기본 카메라로 하세요.</p>
     </div>
 
-    <!-- 추가 버튼 -->
     <div class="text-center mb-4">
       <button id="addBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">+ 고장 내역 추가</button>
     </div>
 
-    <!-- 검색창 -->
     <div class="flex items-center mb-6">
       <input id="searchInput" type="text" placeholder="검색어 입력 (자동 필터링)" class="flex-grow border rounded-lg px-3 py-2">
     </div>
 
-    <!-- 등록된 고장내역 (전체) -->
     <h2 class="text-xl font-semibold mb-2">등록된 고장내역 (전체)</h2>
     <div id="issueList" class="space-y-4 mb-8"></div>
 
-    <!-- 최근 등록/수정된 내역 -->
     <h2 class="text-xl font-semibold mb-2">최근 등록/수정된 내역</h2>
     <div id="recentList" class="space-y-2"></div>
   </div>
 
-<!-- 등록 모달 -->
+  <!-- modal -->
   <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto flex items-start justify-center">
-   <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
       <h2 id="modalTitle" class="text-xl font-semibold mb-4">고장 내역 등록</h2>
 
-    <div class="mb-3">
-  <p class="font-semibold mb-1">지역:</p>
-  <input id="region" class="w-full border p-2 rounded" placeholder="예: 서울">
-</div>
+      <div class="mb-3">
+        <p class="font-semibold mb-1">지역:</p>
+        <input id="region" class="w-full border p-2 rounded" placeholder="예: 서울">
+      </div>
 
-<div class="mb-3">
-  <p class="font-semibold mb-1">위치(지사-층수):</p>
-  <input id="location" class="w-full border p-2 rounded" placeholder="예: 강남지사 3층">
-</div>
+      <div class="mb-3">
+        <p class="font-semibold mb-1">위치(지사-층수):</p>
+        <input id="location" class="w-full border p-2 rounded" placeholder="예: 강남지사 3층">
+      </div>
 
-<div class="mb-3">
-  <p class="font-semibold mb-1">물건명:</p>
-  <input id="device" class="w-full border p-2 rounded" placeholder="예: 프린터기">
-</div>
+      <div class="mb-3">
+        <p class="font-semibold mb-1">물건명:</p>
+        <input id="device" class="w-full border p-2 rounded" placeholder="예: 프린터기">
+      </div>
 
-<div class="mb-3">
-  <p class="font-semibold mb-1">사고 내용:</p>
-  <textarea id="problem" class="w-full border p-2 rounded" rows="2" placeholder="예: 용지가 걸림"></textarea>
-</div>
+      <div class="mb-3">
+        <p class="font-semibold mb-1">사고 내용:</p>
+        <textarea id="problem" class="w-full border p-2 rounded" rows="2" placeholder="예: 용지가 걸림"></textarea>
+      </div>
 
+      <div class="flex flex-wrap gap-2 items-center w-full mb-2">
+        <input id="problemPhoto" type="file" accept="image/*" class="flex-grow border p-1 rounded w-full sm:w-auto">
+        <button type="button" id="cameraProblemBtn" class="border p-2 rounded bg-gray-200 hover:bg-gray-300 text-sm w-full sm:w-auto">📸 카메라</button>
+      </div>
 
- <div class="flex flex-wrap gap-2 items-center w-full mb-2">
-  <input id="problemPhoto" type="file" accept="image/*" class="flex-grow border p-1 rounded w-full sm:w-auto">
-  <button type="button" id="cameraProblemBtn"
-    class="border p-2 rounded bg-gray-200 hover:bg-gray-300 text-sm w-full sm:w-auto">
-    📸 카메라
-  </button>
-</div>
-
-<img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
-
+      <img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
 
       <div id="solutionsContainer" class="space-y-4 mb-4"></div>
       <button id="addSolutionBtn" class="bg-blue-200 text-sm px-3 py-1 rounded">+ 해결방법 추가</button>
@@ -89,612 +71,527 @@
     </div>
   </div>
 
-<!-- Firebase module (must be module to use v10 API) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-  import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, doc, getDoc, deleteDoc, updateDoc
-  } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+  <!-- Firebase module -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, getDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyA75TRjxqZusMTv9J7SpChNqavgZQH5LeI",
-    authDomain: "fixitfast-web.firebaseapp.com",
-    projectId: "fixitfast-web",
-   storageBucket: "fixitfast-web.appspot.com",
+    const firebaseConfig = {
+      apiKey: "AIzaSyA75TRjxqZusMTv9J7SpChNqavgZQH5LeI",
+      authDomain: "fixitfast-web.firebaseapp.com",
+      projectId: "fixitfast-web",
+      storageBucket: "fixitfast-web.appspot.com",
+      messagingSenderId: "609762639355",
+      appId: "1:609762639355:web:a8a39674fe5f806f085f5e"
+    };
 
-    messagingSenderId: "609762639355",
-    appId: "1:609762639355:web:a8a39674fe5f806f085f5e"
-  };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    window.db = db;
+    window.addDoc = addDoc;
+    window.collection = collection;
+    window.getDocs = getDocs;
+    window.query = query;
+    window.orderBy = orderBy;
+    window.doc = doc;
+    window.getDoc = getDoc;
+    window.deleteDoc = deleteDoc;
+    window.updateDoc = updateDoc;
+  </script>
 
-  // expose to window so non-module script can use them
-  window.db = db;
-  window.addDoc = addDoc;
-  window.collection = collection;
-  window.getDocs = getDocs;
-  window.query = query;
-  window.orderBy = orderBy;
-  window.doc = doc;
-  window.getDoc = getDoc;
-  window.deleteDoc = deleteDoc;
-  window.updateDoc = updateDoc;
-</script>
+  <script>
+    let currentIssues = [];
+    let editDocId = null;
 
-<script>
-/* Main script (non-module) - uses window.* provided by module */
-let currentIssues = []; // holds last fetched list
-let editDocId = null;
-
-function toBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function addStep(container) {
-  const stepDiv = document.createElement('div');
-  stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
-stepDiv.innerHTML = `
-  <div class="flex justify-between items-center">
-    <input placeholder="단계 설명" class="step-input w-full border p-2 rounded mb-1">
-    <button class="removeStep text-red-500 text-sm ml-2">X</button>
-  </div>
- <div class="flex flex-wrap gap-2 items-center w-full">
-  <input type="file" accept="image/*" class="step-image flex-grow border p-1 rounded w-full sm:w-auto">
-  <button type="button" class="cameraBtn border p-2 rounded bg-gray-200 hover:bg-gray-300 text-sm w-full sm:w-auto">📸 카메라</button>
-</div>
-
- 
-`;
-
-  stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
-
-  const fileInput = stepDiv.querySelector('.step-image');
-  const preview = stepDiv.querySelector('.step-preview');
-  fileInput.addEventListener('change', (e) => {
-    const f = e.target.files[0];
-    if (f) {
-      const reader = new FileReader();
-      reader.onload = evt => {
-        preview.src = evt.target.result;
-        preview.classList.remove('hidden');
-      };
-      reader.readAsDataURL(f);
-    }
-  });
-
-  container.appendChild(stepDiv);
-}
-
-function addSolution() {
-  const container = document.getElementById('solutionsContainer');
-  const count = container.querySelectorAll('.solution-item').length + 1;
-  const div = document.createElement('div');
-  div.className = 'solution-item border p-2 rounded bg-white';
-  div.innerHTML = `
-    <div class="flex justify-between items-center mb-2">
-      <h3 class="font-semibold">[${count}] 해결방법</h3>
-      <div>
-        <button class="removeSolution text-red-500 text-sm mr-2">❌</button>
-      </div>
-    </div>
-    <div class="steps space-y-2 mb-2"></div>
-    <div class="flex space-x-2">
-      <button class="addStep bg-gray-200 text-xs px-2 py-1 rounded">+ 단계 추가</button>
-    </div>
-  `;
-  div.querySelector('.removeSolution').onclick = () => div.remove();
-  div.querySelector('.addStep').onclick = () => addStep(div.querySelector('.steps'));
-  container.appendChild(div);
-}
-
-function openModal(edit=false, docId=null) {
-  if (!edit) editDocId = null;
-
-  const modal = document.getElementById('modal');
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-  document.getElementById('modalTitle').textContent = edit ? '고장 내역 편집' : '고장 내역 등록';
-
-  // clear fields
-  document.getElementById('region').value = '';
-  document.getElementById('location').value = '';
-  document.getElementById('device').value = '';
-  document.getElementById('problem').value = '';
-  document.getElementById('problemPhoto').value = '';
-  document.getElementById('problemPreview').classList.add('hidden');
-  document.getElementById('problemPreview').src = '';
-  document.getElementById('solutionsContainer').innerHTML = '';
-
-  if (edit && docId) {
-    // fetch doc and populate
-    window.getDoc(window.doc(window.db, "issues", docId)).then(snap => {
-      if (!snap.exists) return alert('문서를 찾을 수 없습니다');
-      const data = snap.data();
-      document.getElementById('region').value = data.region || '';
-      document.getElementById('location').value = data.location || '';
-      document.getElementById('device').value = data.device || '';
-      document.getElementById('problem').value = data.problem || '';
-      if (data.problemImg) {
-        const pprev = document.getElementById('problemPreview');
-        pprev.src = data.problemImg;
-        pprev.classList.remove('hidden');
-      }
-      (data.solutions || []).forEach(sol => {
-        const div = document.createElement('div');
-        div.className = 'solution-item border p-2 rounded bg-white';
-        div.innerHTML = `
-          <div class="flex justify-between items-center mb-2">
-            <h3 class="font-semibold">해결방법</h3>
-            <div>
-              <button class="removeSolution text-red-500 text-sm mr-2">❌</button>
-            </div>
-          </div>
-          <div class="steps space-y-2 mb-2"></div>
-          <div class="flex space-x-2">
-            <button class="addStep bg-gray-200 text-xs px-2 py-1 rounded">+ 단계 추가</button>
-          </div>
-        `;
-        div.querySelector('.removeSolution').onclick = () => div.remove();
-        div.querySelector('.addStep').onclick = () => addStep(div.querySelector('.steps'));
-
-(sol.steps || []).forEach(s => {
-  const stepDiv = document.createElement('div');
-  stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
-
-  // 이미지 있을 때만 <img> 추가
-  let imgTag = '';
-  if (s.img && s.img.startsWith('data:image')) {
-    imgTag = `<img src="${s.img}" class="step-preview mt-2 max-h-32 rounded border">`;
-  }
-
-  stepDiv.innerHTML = `
-    <div class="flex justify-between items-center">
-      <input value="${s.text || ''}" class="step-input w-full border p-2 rounded mb-1">
-      <button class="removeStep text-red-500 text-sm ml-2">X</button>
-    </div>
-    <input type="file" accept="image/*" class="step-image w-full">
-    ${imgTag}
-  `;
-
-  
-
-  stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
-  div.querySelector('.steps').appendChild(stepDiv);
-});
-
-        document.getElementById('solutionsContainer').appendChild(div);
+    // 이미지 압축 포함 toBase64 (하나로 통일)
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxWidth = 1024;
+            const scaleSize = Math.min(1, maxWidth / img.width);
+            canvas.width = img.width * scaleSize;
+            canvas.height = img.height * scaleSize;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.2);
+            resolve(compressedDataUrl);
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
-      editDocId = docId;
-    }).catch(e => console.error(e));
-  }
-}
-
-function closeModal() {
-  const modal = document.getElementById('modal');
-  modal.classList.add('hidden');
-}
-
-/* Save (create or update) */
-async function saveIssue() {
-document.getElementById('saveBtn').disabled = true;
-document.getElementById('saveBtn').textContent = "⏳ 저장 중...";
-
-  const region = document.getElementById('region').value;
-  const location = document.getElementById('location').value;
-  const device = document.getElementById('device').value;
-  const problem = document.getElementById('problem').value;
-
-let problemImg = '';
-const problemPhotoInput = document.getElementById('problemPhoto');
-const oldImg = document.getElementById('problemPreview').src;
-if (problemPhotoInput.files.length > 0) {
-  problemImg = await toBase64(problemPhotoInput.files[0]);
-}
-
-
-else if (oldImg) {
-  problemImg = oldImg; // 기존 이미지 유지
-}
-
-
-  const solutions = [];
-  const solutionEls = document.querySelectorAll('.solution-item');
-  for (let solEl of solutionEls) {
-    const steps = [];
-    const stepEls = solEl.querySelectorAll('.step-item');
-    for (let stepEl of stepEls) {
-      const text = (stepEl.querySelector('.step-input') || {}).value || '';
-      let img = '';
-      const imgInput = stepEl.querySelector('.step-image');
-   
- const oldPreview = stepEl.querySelector('.step-preview');
-
-if (imgInput && imgInput.files.length > 0) {
-  img = await toBase64(imgInput.files[0]);
-}
-
-
-else if (oldPreview && oldPreview.src) {
-  img = oldPreview.src; // 기존 이미지 유지
-}
-steps.push({ text, img });
-
     }
-    solutions.push({ steps });
-  }
 
-  const data = { region, location, device, problem, problemImg, solutions, updated: new Date().toISOString() };
+    function addStep(container) {
+      const stepDiv = document.createElement('div');
+      stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
+      stepDiv.innerHTML = `
+        <div class="flex justify-between items-center">
+          <textarea placeholder="단계 설명 (줄바꿈 가능)" class="step-input w-full border p-2 rounded mb-1 resize-y" rows="3"></textarea>
+          <button class="removeStep text-red-500 text-sm ml-2">X</button>
+        </div>
+        <div class="flex flex-wrap gap-2 items-center w-full">
+          <input type="file" accept="image/*" class="step-image flex-grow border p-1 rounded w-full sm:w-auto">
+          <button type="button" class="cameraBtn border p-2 rounded bg-gray-200 hover:bg-gray-300 text-sm w-full sm:w-auto">📸 카메라</button>
+        </div>
+        <img class="step-preview hidden mt-2 max-h-32 rounded border">
+      `;
 
-  try {
-    if (editDocId) {
-      await window.updateDoc(window.doc(window.db, "issues", editDocId), data);
-      alert("수정 완료 ✅");
-    } else {
-      await window.addDoc(window.collection(window.db, "issues"), data);
-      alert("저장 완료 ✅");
+      stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
+
+      const fileInput = stepDiv.querySelector('.step-image');
+      const preview = stepDiv.querySelector('.step-preview');
+      fileInput.addEventListener('change', (e) => {
+        const f = e.target.files[0];
+        if (f) {
+          const reader = new FileReader();
+          reader.onload = evt => {
+            preview.src = evt.target.result;
+            preview.classList.remove('hidden');
+          };
+          reader.readAsDataURL(f);
+        }
+      });
+
+      container.appendChild(stepDiv);
     }
-    editDocId = null;
-    closeModal();
-    await renderIssues();
-  } catch (e) {
-    console.error("저장 오류:", e);
-    alert("저장 실패 ❌ (콘솔 확인)");
-} finally {
-  document.getElementById('saveBtn').disabled = false;
-  document.getElementById('saveBtn').textContent = "저장";
 
+    function addSolution() {
+      const container = document.getElementById('solutionsContainer');
+      const count = container.querySelectorAll('.solution-item').length + 1;
+      const div = document.createElement('div');
+      div.className = 'solution-item border p-2 rounded bg-white';
+      div.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="font-semibold">[${count}] 해결방법</h3>
+          <div>
+            <button class="removeSolution text-red-500 text-sm mr-2">❌</button>
+          </div>
+        </div>
+        <div class="steps space-y-2 mb-2"></div>
+        <div class="flex space-x-2">
+          <button class="addStep bg-gray-200 text-xs px-2 py-1 rounded">+ 단계 추가</button>
+        </div>
+      `;
+      div.querySelector('.removeSolution').onclick = () => div.remove();
+      div.querySelector('.addStep').onclick = () => addStep(div.querySelector('.steps'));
+      container.appendChild(div);
+    }
 
-  }
-}
+    function openModal(edit=false, docId=null) {
+      if (!edit) editDocId = null;
+      const modal = document.getElementById('modal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      document.getElementById('modalTitle').textContent = edit ? '고장 내역 편집' : '고장 내역 등록';
 
-/* Render list from Firestore */
-async function renderIssues(filter = "") {
-  const issueList = document.getElementById("issueList");
-  issueList.innerHTML = "";
+      // clear
+      document.getElementById('region').value = '';
+      document.getElementById('location').value = '';
+      document.getElementById('device').value = '';
+      document.getElementById('problem').value = '';
+      document.getElementById('problemPhoto').value = '';
+      const pprev = document.getElementById('problemPreview');
+      pprev.classList.add('hidden'); pprev.src = '';
+      document.getElementById('solutionsContainer').innerHTML = '';
 
-  try {
-    const q = window.query(window.collection(window.db, "issues"), window.orderBy("updated", "desc"));
-    const snap = await window.getDocs(q);
-    const issues = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    currentIssues = issues;
+      if (edit && docId) {
+        window.getDoc(window.doc(window.db, "issues", docId)).then(snap => {
+          if (!snap.exists) return alert('문서를 찾을 수 없습니다');
+          const data = snap.data();
+          document.getElementById('region').value = data.region || '';
+          document.getElementById('location').value = data.location || '';
+          document.getElementById('device').value = data.device || '';
+          document.getElementById('problem').value = data.problem || '';
+          if (data.problemImg) {
+            pprev.src = data.problemImg;
+            pprev.classList.remove('hidden');
+          }
 
-    const filtered = issues.filter(i => {
-      const f = filter.toLowerCase();
-      return (
-        (i.region || '').toLowerCase().includes(f) ||
-        (i.location || '').toLowerCase().includes(f) ||
-        (i.device || '').toLowerCase().includes(f) ||
-        (i.problem || '').toLowerCase().includes(f) ||
-        (i.solutions || []).some(sol =>
-          (sol.steps || []).some(s => (s.text || '').toLowerCase().includes(f))
-        )
-      );
-    });
+          (data.solutions || []).forEach(sol => {
+            const div = document.createElement('div');
+            div.className = 'solution-item border p-2 rounded bg-white';
+            div.innerHTML = `
+              <div class="flex justify-between items-center mb-2">
+                <h3 class="font-semibold">해결방법</h3>
+                <div>
+                  <button class="removeSolution text-red-500 text-sm mr-2">❌</button>
+                </div>
+              </div>
+              <div class="steps space-y-2 mb-2"></div>
+              <div class="flex space-x-2">
+                <button class="addStep bg-gray-200 text-xs px-2 py-1 rounded">+ 단계 추가</button>
+              </div>
+            `;
+            div.querySelector('.removeSolution').onclick = () => div.remove();
+            div.querySelector('.addStep').onclick = () => addStep(div.querySelector('.steps'));
 
-    filtered.forEach(issue => {
-      const html = `
-        <div class="border p-4 rounded-lg bg-white shadow">
-        <p><b>지역:</b> ${issue.region}</p>
-<p><b>위치:</b> ${issue.location}</p>
-<p><b>물건명:</b> ${issue.device}</p>
-<p><b>사고내용:</b> ${issue.problem}</p>
+            (sol.steps || []).forEach(s => {
+              const stepDiv = document.createElement('div');
+              stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
+              stepDiv.innerHTML = `
+                <div class="flex justify-between items-center">
+                  <textarea class="step-input w-full border p-2 rounded mb-1 resize-y" rows="3">${s.text || ''}</textarea>
+                  <button class="removeStep text-red-500 text-sm ml-2">X</button>
+                </div>
+                <div class="flex flex-wrap gap-2 items-center w-full">
+                  <input type="file" accept="image/*" class="step-image flex-grow border p-1 rounded w-full sm:w-auto">
+                  <button type="button" class="cameraBtn border p-2 rounded bg-gray-200 hover:bg-gray-300 text-sm w-full sm:w-auto">📸 카메라</button>
+                </div>
+                <img class="step-preview mt-2 max-h-32 rounded border ${s.img ? '' : 'hidden'}" ${s.img ? `src="${s.img}"` : ''}>
+              `;
 
-      ${issue.problemImg && issue.problemImg.startsWith("data:image") 
-  ? `<img src="${issue.problemImg}" class="mt-2 rounded border max-h-40">` 
-  : ""}
+              stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
 
+              const fileInput = stepDiv.querySelector('.step-image');
+              const preview = stepDiv.querySelector('.step-preview');
+              fileInput.addEventListener('change', (e) => {
+                const f = e.target.files[0];
+                if (f) {
+                  const reader = new FileReader();
+                  reader.onload = evt => {
+                    preview.src = evt.target.result;
+                    preview.classList.remove('hidden');
+                  };
+                  reader.readAsDataURL(f);
+                }
+              });
+
+              div.querySelector('.steps').appendChild(stepDiv);
+            });
+
+            document.getElementById('solutionsContainer').appendChild(div);
+          });
+
+          editDocId = docId;
+        }).catch(e => console.error(e));
+      }
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      modal.classList.add('hidden');
+    }
+
+    async function saveIssue() {
+      document.getElementById('saveBtn').disabled = true;
+      document.getElementById('saveBtn').textContent = "⏳ 저장 중...";
+
+      const region = document.getElementById('region').value;
+      const location = document.getElementById('location').value;
+      const device = document.getElementById('device').value;
+      const problem = document.getElementById('problem').value;
+
+      let problemImg = '';
+      const problemPhotoInput = document.getElementById('problemPhoto');
+      const oldImg = document.getElementById('problemPreview').src;
+      if (problemPhotoInput.files.length > 0) {
+        problemImg = await toBase64(problemPhotoInput.files[0]);
+      } else if (oldImg) {
+        problemImg = oldImg;
+      }
+
+      const solutions = [];
+      const solutionEls = document.querySelectorAll('.solution-item');
+      for (let solEl of solutionEls) {
+        const steps = [];
+        const stepEls = solEl.querySelectorAll('.step-item');
+        for (let stepEl of stepEls) {
+          const text = (stepEl.querySelector('.step-input') || {}).value || '';
+          let img = '';
+          const imgInput = stepEl.querySelector('.step-image');
+          const oldPreview = stepEl.querySelector('.step-preview');
+
+          if (imgInput && imgInput.files.length > 0) {
+            img = await toBase64(imgInput.files[0]);
+          } else if (oldPreview && oldPreview.src) {
+            img = oldPreview.src;
+          }
+          steps.push({ text, img });
+        }
+        solutions.push({ steps });
+      }
+
+      const data = { region, location, device, problem, problemImg, solutions, updated: new Date().toISOString() };
+
+      try {
+        if (editDocId) {
+          await window.updateDoc(window.doc(window.db, "issues", editDocId), data);
+          alert("수정 완료 ✅");
+        } else {
+          await window.addDoc(window.collection(window.db, "issues"), data);
+          alert("저장 완료 ✅");
+        }
+        editDocId = null;
+        closeModal();
+        await renderIssues();
+      } catch (e) {
+        console.error("저장 오류:", e);
+        alert("저장 실패 ❌ (콘솔 확인)");
+      } finally {
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveBtn').textContent = "저장";
+      }
+    }
+
+    async function renderIssues(filter = "") {
+      const issueList = document.getElementById("issueList");
+      issueList.innerHTML = "";
+
+      try {
+        const q = window.query(window.collection(window.db, "issues"), window.orderBy("updated", "desc"));
+        const snap = await window.getDocs(q);
+        const issues = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        currentIssues = issues;
+
+        const filtered = issues.filter(i => {
+          const f = filter.toLowerCase();
+          return (
+            (i.region || '').toLowerCase().includes(f) ||
+            (i.location || '').toLowerCase().includes(f) ||
+            (i.device || '').toLowerCase().includes(f) ||
+            (i.problem || '').toLowerCase().includes(f) ||
+            (i.solutions || []).some(sol =>
+              (sol.steps || []).some(s => (s.text || '').toLowerCase().includes(f))
+            )
+          );
+        });
+
+        filtered.forEach(issue => {
+          const html = `
+            <div class="border p-4 rounded-lg bg-white shadow">
+              <p><b>지역:</b> ${issue.region}</p>
+              <p><b>위치:</b> ${issue.location}</p>
+              <p><b>물건명:</b> ${issue.device}</p>
+              <p><b>사고내용:</b> ${issue.problem}</p>
+              ${issue.problemImg && issue.problemImg.startsWith("data:image") ? `<img src="${issue.problemImg}" class="mt-2 rounded border max-h-40">` : ''}
+              ${(issue.solutions || []).map((sol, idx) => `
+                <div class="border-t pt-2 mt-2">
+                  <p class="font-semibold">[${idx + 1}] 해결방법</p>
+                  <ol class="list-decimal list-inside">
+                    ${(sol.steps || []).map(s => `
+                      <li class="mb-2 break-words">
+                        ${(s.text || '').replace(/\n/g, '<br>')}
+                        ${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}
+                      </li>
+                    `).join('')}
+                  </ol>
+                </div>
+              `).join('')}
+              <div class="flex space-x-2 mt-3">
+                <button onclick="openModal(true, '${issue.id}')" class="text-blue-600">편집</button>
+                <button onclick="deleteIssue('${issue.id}')" class="text-red-600">삭제</button>
+                <button onclick="generateQRCodeAndCopy('${issue.id}')" class="text-green-600">url 복사</button>
+                <button onclick="showLargeQR('${issue.id}')" class="text-blue-600">QR 이미지 보기</button>
+                <button onclick="viewIssue('${issue.id}')" class="text-purple-600">내용 보기</button>
+              </div>
+              <div id="detail-${issue.id}" class="hidden mt-2 p-2 bg-gray-100 rounded"></div>
+              <div class="mt-2" id="qr-${issue.id}"></div>
+            </div>
+          `;
+          issueList.insertAdjacentHTML("beforeend", html);
+
+          try {
+            const qrDiv = document.getElementById("qr-" + issue.id);
+            qrDiv.innerHTML = "";
+            new QRCode(qrDiv, { text: window.location.origin + window.location.pathname + "?id=" + issue.id, width: 100, height: 100 });
+          } catch (e) {
+            console.warn("QR 실패", e);
+          }
+        });
+
+        const recentList = document.getElementById("recentList");
+        recentList.innerHTML = "";
+        issues.slice(-3).reverse().forEach(issue => {
+          recentList.innerHTML += `<div class="border p-2 rounded bg-white">${issue.device} - ${issue.problem}</div>`;
+        });
+
+      } catch (e) {
+        console.error("렌더 오류:", e);
+      }
+    }
+
+    async function deleteIssue(id) {
+      if (!confirm("정말 삭제할까요?")) return;
+      try {
+        await window.deleteDoc(window.doc(window.db, "issues", id));
+        await renderIssues();
+      } catch (e) {
+        console.error(e);
+        alert("삭제 실패");
+      }
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(()=>alert("URL이 복사되었습니다 ✅"));
+    }
+
+    async function toggleDetail(id) {
+      const detailDiv = document.getElementById("detail-" + id);
+      if (!detailDiv) return;
+      if (!detailDiv.classList.contains("hidden")) {
+        detailDiv.classList.add("hidden");
+        detailDiv.innerHTML = "";
+      } else {
+        const issue = currentIssues.find(x => x.id === id);
+        if (!issue) return;
+        detailDiv.classList.remove("hidden");
+        detailDiv.innerHTML = `
+          <p><b>지역:</b> ${issue.region}</p>
+          <p><b>위치:</b> ${issue.location}</p>
+          <p><b>물건명:</b> ${issue.device}</p>
+          <p><b>사고 내용:</b> ${issue.problem}</p>
+          ${issue.problemImg && issue.problemImg.startsWith("data:image") ? `<img src="${issue.problemImg}" class="mt-2 max-h-40 rounded border">` : ''}
+          <h4 class="mt-2 font-semibold">해결방법</h4>
           ${(issue.solutions || []).map((sol, idx) => `
-            <div class="border-t pt-2 mt-2">
-              <p class="font-semibold">[${idx + 1}] 해결방법</p>
+            <div class="mt-1">
+              <b>[${idx + 1}]</b>
               <ol class="list-decimal list-inside">
                 ${(sol.steps || []).map(s => `
-                  <li class="mb-2">
-                    ${s.text || ''}
+                  <li class="mb-2 break-words">
+                    ${(s.text || '').replace(/\n/g, '<br>')}
                     ${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}
                   </li>
                 `).join('')}
               </ol>
             </div>
           `).join('')}
-          <div class="flex space-x-2 mt-3">
-            <button onclick="openModal(true, '${issue.id}')" class="text-blue-600">편집</button>
-            <button onclick="deleteIssue('${issue.id}')" class="text-red-600">삭제</button>
-            <button onclick="generateQRCodeAndCopy('${issue.id}')" class="text-green-600">url 복사 </button>
- <button onclick="showLargeQR('${issue.id}')" class="text-blue-600">QR 이미지 보기</button>
-        <button onclick="viewIssue('${issue.id}')" class="text-purple-600">내용 보기</button>
-
-
-          </div>
-          <div id="detail-${issue.id}" class="hidden mt-2 p-2 bg-gray-100 rounded"></div>
-          <div class="mt-2" id="qr-${issue.id}"></div>
-        </div>`;
-      issueList.insertAdjacentHTML("beforeend", html);
-      // generate QR for each
-      try {
-        const qrDiv = document.getElementById("qr-" + issue.id);
-        qrDiv.innerHTML = "";
-        new QRCode(qrDiv, { text: window.location.origin + window.location.pathname + "?id=" + issue.id, width: 100, height: 100 });
-      } catch(e) {
-        console.warn("QR 실패", e);
+        `;
       }
-    });
+    }
 
-    // render recent
-    const recentList = document.getElementById("recentList");
-    recentList.innerHTML = "";
-    issues.slice(-3).reverse().forEach(issue => {
-      recentList.innerHTML += `<div class="border p-2 rounded bg-white">${issue.device} - ${issue.problem}</div>`;
-    });
+    window.addEventListener("DOMContentLoaded", async () => {
+      document.getElementById("addBtn").onclick = () => openModal();
+      document.getElementById("cancelBtn").onclick = closeModal;
+      document.getElementById("saveBtn").onclick = saveIssue;
+      document.getElementById("addSolutionBtn").onclick = addSolution;
+      document.getElementById("searchInput").addEventListener("input", e => renderIssues(e.target.value.toLowerCase()));
 
-  } catch (e) {
-    console.error("렌더 오류:", e);
-  }
-}
+      await renderIssues();
 
-async function deleteIssue(id) {
-  if (!confirm("정말 삭제할까요?")) return;
-  try {
-    await window.deleteDoc(window.doc(window.db, "issues", id));
-    await renderIssues();
-  } catch (e) {
-    console.error(e);
-    alert("삭제 실패");
-  }
-}
-
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(()=>alert("URL이 복사되었습니다 ✅"));
-}
-
-async function toggleDetail(id) {
-  const detailDiv = document.getElementById("detail-" + id);
-  if (!detailDiv) return;
-  if (!detailDiv.classList.contains("hidden")) {
-    detailDiv.classList.add("hidden");
-    detailDiv.innerHTML = "";
-  } else {
-    // find issue in currentIssues
-    const issue = currentIssues.find(x => x.id === id);
-    if (!issue) return;
-    detailDiv.classList.remove("hidden");
-    detailDiv.innerHTML = `
- <p><b>지역:</b> ${issue.region}</p>
-      <p><b>위치:</b> ${issue.location}</p>
-      <p><b>물건명:</b> ${issue.device}</p>
-      <p><b>사고 내용:</b> ${issue.problem}</p>
-      ${issue.problemImg && issue.problemImg.startsWith("data:image") 
-  ? `<img src="${issue.problemImg}" class="mt-2 max-h-40 rounded border">` 
-  : ""}
-
-      <h4 class="mt-2 font-semibold">해결방법</h4>
-      ${(issue.solutions || []).map((sol, idx) => `
-        <div class="mt-1">
-          <b>[${idx + 1}]</b>
-          <ol class="list-decimal list-inside">
-            ${(sol.steps || []).map(s => `<li>${s.text || ''}${s.img ? `<br><img src='${s.img}' class='mt-1 max-h-32 rounded border'>` : ''}</li>`).join('')}
-          </ol>
-        </div>
-      `).join('')}
-    `;
-  }
-}
-
-
-
-
-window.addEventListener("DOMContentLoaded", async () => {
-  // ✅ 버튼 이벤트 바인딩
-  document.getElementById("addBtn").onclick = () => openModal();
-  document.getElementById("cancelBtn").onclick = closeModal;
-  document.getElementById("saveBtn").onclick = saveIssue;
-  document.getElementById("addSolutionBtn").onclick = addSolution;
-  document.getElementById("searchInput").addEventListener("input", e => renderIssues(e.target.value.toLowerCase()));
-
-  // ✅ Firestore에서 데이터 렌더링
-  await renderIssues();
-
-  // ✅ URL에 id가 있으면 바로 해당 문서 보기
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-  if (id) {
-    try {
-      const docRef = window.doc(window.db, "issues", id);
-      const docSnap = await window.getDoc(docRef);
-      if (!docSnap.exists()) {
-        alert("해당 내역을 찾을 수 없습니다.");
-        return;
-      }
-      const d = docSnap.data();
-      document.body.innerHTML = `
-        <div class="max-w-3xl mx-auto p-6">
-          <!-- 🔼 상단에 목록으로 돌아가기 -->
-          <div class="mb-4">
-            <a href="https://whdalsrnsdk5-ux.github.io/fixitfast/" class="text-blue-600 underline">← 목록으로 돌아가기</a>
-          </div>
-
-          <h1 class="text-3xl font-bold mb-2">${d.device}</h1>
-          <p><b>지역:</b> ${d.region}</p>
-          <p><b>위치:</b> ${d.location}</p>
-          <p><b>사고 내용:</b> ${d.problem}</p>
-          ${d.problemImg && d.problemImg.startsWith("data:image") 
-            ? `<img src="${d.problemImg}" class="mt-3 max-h-60 rounded border">` 
-            : ""}
-
-          ${(d.solutions || []).map((sol, idx) => `
-            <div class="mt-4">
-              <p class="font-semibold">[${idx + 1}] 해결방법</p>
-              <ol class="list-decimal list-inside">
-                ${(sol.steps || []).map(s => `
-                  <li>${s.text || ''}${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}</li>`
-                ).join('')}
-              </ol>
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      if (id) {
+        try {
+          const docRef = window.doc(window.db, "issues", id);
+          const docSnap = await window.getDoc(docRef);
+          if (!docSnap.exists()) {
+            alert("해당 내역을 찾을 수 없습니다.");
+            return;
+          }
+          const d = docSnap.data();
+          document.body.innerHTML = `
+            <div class="max-w-3xl mx-auto p-6">
+              <div class="mb-4">
+                <a href="${window.location.origin + window.location.pathname}" class="text-blue-600 underline">← 목록으로 돌아가기</a>
+              </div>
+              <h1 class="text-3xl font-bold mb-2">${d.device}</h1>
+              <p><b>지역:</b> ${d.region}</p>
+              <p><b>위치:</b> ${d.location}</p>
+              <p><b>사고 내용:</b> ${d.problem}</p>
+              ${d.problemImg && d.problemImg.startsWith("data:image") ? `<img src="${d.problemImg}" class="mt-3 max-h-60 rounded border">` : ''}
+              ${(d.solutions || []).map((sol, idx) => `
+                <div class="mt-4">
+                  <p class="font-semibold">[${idx + 1}] 해결방법</p>
+                  <ol class="list-decimal list-inside">
+                    ${(sol.steps || []).map(s => `
+                      <li class="mb-2 break-words">
+                        ${(s.text || '').replace(/\n/g, '<br>')}
+                        ${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}
+                      </li>
+                    `).join('')}
+                  </ol>
+                </div>
+              `).join('')}
+              <div class="mt-6">
+                <a href="${window.location.origin + window.location.pathname}" class="text-blue-600 underline">← 목록으로 돌아가기</a>
+              </div>
             </div>
-          `).join('')}
-
-          <!-- 🔽 하단에도 목록으로 돌아가기 -->
-          <div class="mt-6">
-            <a href="https://whdalsrnsdk5-ux.github.io/fixitfast/" class="text-blue-600 underline">← 목록으로 돌아가기</a>
-          </div>
-        </div>
-      `;
-    } catch (e) {
-      console.error(e);
-      alert("로드 실패");
-    }
-   }
-});
-
-function viewIssue(id) {
-  const url = window.location.origin + window.location.pathname + "?id=" + id;
-  window.location.href = url; // 바로 이동
-}
-
-async function generateQRCodeAndCopy(id) {
-  const qrDiv = document.getElementById("qr-" + id);
-  qrDiv.innerHTML = ""; // 기존 QR 초기화
-  const url = window.location.origin + window.location.pathname + "?id=" + id;
-
-  // QR 코드 생성
-  new QRCode(qrDiv, {
-    text: url,
-    width: 120,
-    height: 120
-  });
-
-  // URL 복사 기능
-  try {
-    await navigator.clipboard.writeText(url);
-    alert("QR 코드가 생성되었고 URL이 복사되었습니다 ✅\n(붙여넣기하면 바로 접속 가능)");
-  } catch {
-    alert("QR 생성은 완료되었지만 URL 복사에 실패했습니다.");
-  }
-}
-
-function showLargeQR(id) {
-  const modal = document.getElementById('qrModal');
-  const qrContainer = document.getElementById('qrLargeContainer');
-  qrContainer.innerHTML = ''; // 초기화
-  const url = window.location.origin + window.location.pathname + "?id=" + id;
-
-  // QR 코드 크게 생성
-  new QRCode(qrContainer, {
-    text: url,
-    width: 250,
-    height: 250
-  });
-
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-}
-
-function closeQRModal() {
-  const modal = document.getElementById('qrModal');
-  modal.classList.add('hidden');
-  modal.classList.remove('flex');
-}
-
-// 📸 카메라 버튼 공통 기능
-document.addEventListener("click", async (e) => {
-  // 1️⃣ 사고 내용 사진
-  if (e.target.id === "cameraProblemBtn") {
-    const input = document.getElementById("problemPhoto");
-    input.setAttribute("capture", "environment"); // 후면 카메라 우선
-    input.click();
-    input.onchange = () => {
-      const file = input.files[0];
-      if (file) {
-        const preview = document.getElementById("problemPreview");
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          preview.src = evt.target.result;
-          preview.classList.remove("hidden");
-        };
-        reader.readAsDataURL(file);
+          `;
+        } catch (e) {
+          console.error(e);
+          alert("로드 실패");
+        }
       }
-    };
-  }
+    });
 
-  // 2️⃣ 단계 내 카메라 버튼
-  if (e.target.classList.contains("cameraBtn")) {
-    const parent = e.target.closest(".step-item");
-    const input = parent.querySelector(".step-image");
-    const preview = parent.querySelector(".step-preview");
-    input.setAttribute("capture", "environment");
-    input.click();
-
-    input.onchange = () => {
-      const file = input.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          preview.src = evt.target.result;
-          preview.classList.remove("hidden");
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-  }
-});
-function toBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        // 캔버스 생성 후 리사이즈 (가로 최대 1024px)
-        const canvas = document.createElement('canvas');
-        const maxWidth = 1024;
-        const scaleSize = maxWidth / img.width;
-        canvas.width = maxWidth;
-        canvas.height = img.height * scaleSize;
-
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        // JPEG로 0.8 품질로 압축
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.2);
-        resolve(compressedDataUrl);
-      };
-      img.onerror = reject;
-      img.src = reader.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// ✅ 페이지 로드시 카메라 권한 확인
-if (navigator.permissions) {
-  navigator.permissions.query({ name: "camera" }).then((result) => {
-    if (result.state === "denied") {
-      alert("⚠️ 카메라 접근이 차단되어 있습니다.\n브라우저 설정에서 허용해주세요.");
+    function viewIssue(id) {
+      const url = window.location.origin + window.location.pathname + "?id=" + id;
+      window.location.href = url;
     }
-  });
-}
 
+    async function generateQRCodeAndCopy(id) {
+      const qrDiv = document.getElementById("qr-" + id);
+      qrDiv.innerHTML = "";
+      const url = window.location.origin + window.location.pathname + "?id=" + id;
+      new QRCode(qrDiv, { text: url, width: 120, height: 120 });
+      try { await navigator.clipboard.writeText(url); alert("QR 코드가 생성되었고 URL이 복사되었습니다 ✅"); }
+      catch { alert("QR 생성은 완료되었지만 URL 복사에 실패했습니다."); }
+    }
 
+    function showLargeQR(id) {
+      const modal = document.getElementById('qrModal');
+      const qrContainer = document.getElementById('qrLargeContainer');
+      qrContainer.innerHTML = '';
+      const url = window.location.origin + window.location.pathname + "?id=" + id;
+      new QRCode(qrContainer, { text: url, width: 250, height: 250 });
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }
 
+    function closeQRModal() {
+      const modal = document.getElementById('qrModal');
+      modal.classList.add('hidden'); modal.classList.remove('flex');
+    }
 
+    // camera buttons
+    document.addEventListener("click", async (e) => {
+      if (e.target.id === "cameraProblemBtn") {
+        const input = document.getElementById("problemPhoto");
+        input.setAttribute("capture", "environment");
+        input.click();
+        input.onchange = () => {
+          const file = input.files[0];
+          if (file) {
+            const preview = document.getElementById("problemPreview");
+            const reader = new FileReader();
+            reader.onload = (evt) => { preview.src = evt.target.result; preview.classList.remove("hidden"); };
+            reader.readAsDataURL(file);
+          }
+        };
+      }
 
-</script>
-<!-- QR 코드 큰 이미지 모달 -->
-<div id="qrModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-xl shadow-xl text-center relative">
-    <button onclick="closeQRModal()" class="absolute top-2 right-2 text-gray-500 hover:text-red-500">✖</button>
-    <h2 class="text-lg font-semibold mb-4">QR 코드</h2>
-    <div id="qrLargeContainer" class="flex justify-center"></div>
+      if (e.target.classList.contains("cameraBtn")) {
+        const parent = e.target.closest(".step-item");
+        const input = parent.querySelector(".step-image");
+        const preview = parent.querySelector(".step-preview");
+        input.setAttribute("capture", "environment");
+        input.click();
+        input.onchange = () => {
+          const file = input.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => { preview.src = evt.target.result; preview.classList.remove("hidden"); };
+            reader.readAsDataURL(file);
+          }
+        };
+      }
+    });
+
+    // qr modal container (bottom of file)
+  </script>
+
+  <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-xl shadow-xl text-center relative">
+      <button onclick="closeQRModal()" class="absolute top-2 right-2 text-gray-500 hover:text-red-500">✖</button>
+      <h2 class="text-lg font-semibold mb-4">QR 코드</h2>
+      <div id="qrLargeContainer" class="flex justify-center"></div>
+    </div>
   </div>
-</div>
-
-
-
-
-
 </body>
 </html>
