@@ -456,18 +456,20 @@ scanBtn.addEventListener("click", async () => {
 
   const readerDiv = document.getElementById("reader");
   readerDiv.innerHTML = "";
-  readerDiv.style.display = "block"; // ✅ 카메라 미리보기 보이게
+  readerDiv.style.display = "block";
 
   const html5QrCode = new Html5Qrcode("reader");
 
   try {
+    // ✅ 기존 스트림 강제 종료 후 시작
+    await html5QrCode.stop().catch(() => {});
     await html5QrCode.start(
-      { facingMode: { ideal: "environment" } },
+      { facingMode: "environment" },
       { fps: 10, qrbox: { width: 250, height: 250 } },
       (decodedText) => {
         html5QrCode.stop();
         qrActive = false;
-        window.location.href = decodedText; // ✅ 스캔 시 바로 이동
+        window.location.href = decodedText;
       }
     );
   } catch (err) {
@@ -476,6 +478,7 @@ scanBtn.addEventListener("click", async () => {
     qrActive = false;
   }
 });
+
 
 // DOMContentLoaded - bind events and initial render, and check URL param
 window.addEventListener("DOMContentLoaded", async () => {
@@ -658,10 +661,6 @@ if (navigator.permissions) {
     }
   });
 }
-// 🔁 페이지 로드시 자동으로 목록 표시
-document.addEventListener("DOMContentLoaded", () => {
-  renderIssues();
-});
 
 
 </script>
