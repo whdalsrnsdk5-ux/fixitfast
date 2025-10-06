@@ -4,19 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FixItFast - Firebase Fixed</title>
+
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
   <div class="max-w-3xl mx-auto p-6">
+
     <h1 class="text-3xl font-bold text-center mb-6">FixItFast</h1>
 
     <!-- QR 스캔 -->
+ 
     <div class="text-center mb-4">
-      <button id="scanBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">QR 코드 스캔하기</button>
-      <div id="reader" class="mt-4"></div>
-    </div>
+<!-- QR 스캔 버튼 (기본 카메라로 이동) -->
+<div class="text-center mb-4">
+  <label for="qrCameraInput" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer">
+    📷 QR 코드 스캔하기
+  </label>
+  <input id="qrCameraInput" type="file" accept="image/*" capture="environment" class="hidden" />
+</div>
+
+   
 
     <!-- 추가 버튼 -->
     <div class="text-center mb-4">
@@ -38,26 +47,39 @@
   </div>
 
 <!-- 등록 모달 -->
-  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center overflow-y-auto">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden overflow-y-auto flex items-start justify-center">
+   <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl relative">
       <h2 id="modalTitle" class="text-xl font-semibold mb-4">고장 내역 등록</h2>
 
-      <label class="font-semibold">지역</label>
-      <input id="region" class="w-full border mb-2 p-2 rounded">
-
-      <label class="font-semibold">위치(지사-층수 )</label>
-      <input id="location" class="w-full border mb-2 p-2 rounded">
-
-      <label class="font-semibold">물건명</label>
-      <input id="device" class="w-full border mb-2 p-2 rounded">
-
-      <label class="font-semibold">사고 내용</label>
-      <textarea id="problem" class="w-full border mb-2 p-2 rounded" rows="2"></textarea>
-  <div class="flex items-center space-x-2 mb-2">
-  <input id="problemPhoto" type="file" accept="image/*"  class="flex-grow border p-1 rounded">
-
-  <button type="button" id="cameraProblemBtn" class="bg-gray-200 px-2 py-1 rounded">📸 카메라</button>
+    <div class="mb-3">
+  <p class="font-semibold mb-1">지역:</p>
+  <input id="region" class="w-full border p-2 rounded" placeholder="예: 서울">
 </div>
+
+<div class="mb-3">
+  <p class="font-semibold mb-1">위치(지사-층수):</p>
+  <input id="location" class="w-full border p-2 rounded" placeholder="예: 강남지사 3층">
+</div>
+
+<div class="mb-3">
+  <p class="font-semibold mb-1">물건명:</p>
+  <input id="device" class="w-full border p-2 rounded" placeholder="예: 프린터기">
+</div>
+
+<div class="mb-3">
+  <p class="font-semibold mb-1">사고 내용:</p>
+  <textarea id="problem" class="w-full border p-2 rounded" rows="2" placeholder="예: 용지가 걸림"></textarea>
+</div>
+
+
+ <div class="flex flex-wrap gap-2 items-center w-full mb-2">
+  <input id="problemPhoto" type="file" accept="image/*" class="flex-grow border p-1 rounded w-full sm:w-auto">
+  <button type="button" id="cameraProblemBtn"
+    class="border p-2 rounded bg-gray-200 hover:bg-gray-300 text-sm w-full sm:w-auto">
+    📸 카메라
+  </button>
+</div>
+
 <img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
 
 
@@ -74,7 +96,6 @@
 <!-- Firebase module (must be module to use v10 API) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-
   import {
     getFirestore, collection, addDoc, getDocs, query, orderBy, doc, getDoc, deleteDoc, updateDoc
   } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
@@ -127,12 +148,12 @@ stepDiv.innerHTML = `
     <input placeholder="단계 설명" class="step-input w-full border p-2 rounded mb-1">
     <button class="removeStep text-red-500 text-sm ml-2">X</button>
   </div>
-  <div class="flex items-center space-x-2">
-    <input type="file" accept="image/*"  class="step-image flex-grow border p-1 rounded">
+ <div class="flex flex-wrap gap-2 items-center w-full">
+  <input type="file" accept="image/*" class="step-image flex-grow border p-1 rounded w-full sm:w-auto">
+  <button type="button" class="cameraBtn border p-2 rounded bg-gray-200 hover:bg-gray-300 text-sm w-full sm:w-auto">📸 카메라</button>
+</div>
 
-    <button type="button" class="cameraBtn bg-gray-200 px-2 py-1 rounded">📸</button>
-  </div>
-  <img class="step-preview hidden mt-2 max-h-32 rounded border">
+ 
 `;
 
   stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
@@ -226,23 +247,30 @@ function openModal(edit=false, docId=null) {
         div.querySelector('.removeSolution').onclick = () => div.remove();
         div.querySelector('.addStep').onclick = () => addStep(div.querySelector('.steps'));
 
-        (sol.steps || []).forEach(s => {
-          const stepDiv = document.createElement('div');
-          stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
-          stepDiv.innerHTML = `
-            <div class="flex justify-between items-center">
-              <input value="${s.text || ''}" class="step-input w-full border p-2 rounded mb-1">
-              <button class="removeStep text-red-500 text-sm ml-2">X</button>
-            </div>
-            <input type="file" accept="image/*"  class="step-image w-full">
+(sol.steps || []).forEach(s => {
+  const stepDiv = document.createElement('div');
+  stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
 
-            ${s.img ? `<img src="${s.img}" class="step-preview mt-2 max-h-32 rounded border">` : `<img class="step-preview hidden mt-2 max-h-32 rounded border">`}
-          `;
-          stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
-          div.querySelector('.steps').appendChild(stepDiv);
-          const previewEl = stepDiv.querySelector('.step-preview');
-          if (s.img) previewEl.classList.remove('hidden');
-        });
+  // 이미지 있을 때만 <img> 추가
+  let imgTag = '';
+  if (s.img && s.img.startsWith('data:image')) {
+    imgTag = `<img src="${s.img}" class="step-preview mt-2 max-h-32 rounded border">`;
+  }
+
+  stepDiv.innerHTML = `
+    <div class="flex justify-between items-center">
+      <input value="${s.text || ''}" class="step-input w-full border p-2 rounded mb-1">
+      <button class="removeStep text-red-500 text-sm ml-2">X</button>
+    </div>
+    <input type="file" accept="image/*" class="step-image w-full">
+    ${imgTag}
+  `;
+
+  
+
+  stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
+  div.querySelector('.steps').appendChild(stepDiv);
+});
 
         document.getElementById('solutionsContainer').appendChild(div);
       });
@@ -356,9 +384,15 @@ async function renderIssues(filter = "") {
     filtered.forEach(issue => {
       const html = `
         <div class="border p-4 rounded-lg bg-white shadow">
-          <p><b>${issue.region}</b> - ${issue.location}</p>
-          <p>${issue.device} | ${issue.problem}</p>
-          ${issue.problemImg ? `<img src="${issue.problemImg}" class="mt-2 rounded border max-h-40">` : ""}
+        <p><b>지역:</b> ${issue.region}</p>
+<p><b>위치:</b> ${issue.location}</p>
+<p><b>물건명:</b> ${issue.device}</p>
+<p><b>사고내용:</b> ${issue.problem}</p>
+
+      ${issue.problemImg && issue.problemImg.startsWith("data:image") 
+  ? `<img src="${issue.problemImg}" class="mt-2 rounded border max-h-40">` 
+  : ""}
+
           ${(issue.solutions || []).map((sol, idx) => `
             <div class="border-t pt-2 mt-2">
               <p class="font-semibold">[${idx + 1}] 해결방법</p>
@@ -377,7 +411,9 @@ async function renderIssues(filter = "") {
             <button onclick="deleteIssue('${issue.id}')" class="text-red-600">삭제</button>
             <button onclick="generateQRCodeAndCopy('${issue.id}')" class="text-green-600">url 복사 </button>
  <button onclick="showLargeQR('${issue.id}')" class="text-blue-600">QR 이미지 보기</button>
-            <button onclick="toggleDetail('${issue.id}')" class="text-purple-600">내용 보기</button>
+        <button onclick="viewIssue('${issue.id}')" class="text-purple-600">내용 보기</button>
+
+
           </div>
           <div id="detail-${issue.id}" class="hidden mt-2 p-2 bg-gray-100 rounded"></div>
           <div class="mt-2" id="qr-${issue.id}"></div>
@@ -432,8 +468,14 @@ async function toggleDetail(id) {
     if (!issue) return;
     detailDiv.classList.remove("hidden");
     detailDiv.innerHTML = `
+ <p><b>지역:</b> ${issue.region}</p>
+      <p><b>위치:</b> ${issue.location}</p>
+      <p><b>물건명:</b> ${issue.device}</p>
       <p><b>사고 내용:</b> ${issue.problem}</p>
-      ${issue.problemImg ? `<img src="${issue.problemImg}" class="mt-2 max-h-40 rounded border">` : ""}
+      ${issue.problemImg && issue.problemImg.startsWith("data:image") 
+  ? `<img src="${issue.problemImg}" class="mt-2 max-h-40 rounded border">` 
+  : ""}
+
       <h4 class="mt-2 font-semibold">해결방법</h4>
       ${(issue.solutions || []).map((sol, idx) => `
         <div class="mt-1">
@@ -450,17 +492,18 @@ async function toggleDetail(id) {
 
 
 
-// DOMContentLoaded - bind events and initial render, and check URL param
 window.addEventListener("DOMContentLoaded", async () => {
+  // ✅ 버튼 이벤트 바인딩
   document.getElementById("addBtn").onclick = () => openModal();
   document.getElementById("cancelBtn").onclick = closeModal;
   document.getElementById("saveBtn").onclick = saveIssue;
   document.getElementById("addSolutionBtn").onclick = addSolution;
   document.getElementById("searchInput").addEventListener("input", e => renderIssues(e.target.value.toLowerCase()));
 
+  // ✅ Firestore에서 데이터 렌더링
   await renderIssues();
 
-  // if URL has ?id=..., show single doc view
+  // ✅ URL에 id가 있으면 바로 해당 문서 보기
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
   if (id) {
@@ -474,21 +517,33 @@ window.addEventListener("DOMContentLoaded", async () => {
       const d = docSnap.data();
       document.body.innerHTML = `
         <div class="max-w-3xl mx-auto p-6">
+          <!-- 🔼 상단에 목록으로 돌아가기 -->
+          <div class="mb-4">
+            <a href="https://whdalsrnsdk5-ux.github.io/fixitfast/" class="text-blue-600 underline">← 목록으로 돌아가기</a>
+          </div>
+
           <h1 class="text-3xl font-bold mb-2">${d.device}</h1>
           <p><b>지역:</b> ${d.region}</p>
-          <p><b>지점:</b> ${d.location}</p>
-          <p class="mt-2">${d.problem}</p>
-          ${d.problemImg ? `<img src="${d.problemImg}" class="mt-3 max-h-60 rounded border">` : ""}
+          <p><b>위치:</b> ${d.location}</p>
+          <p><b>사고 내용:</b> ${d.problem}</p>
+          ${d.problemImg && d.problemImg.startsWith("data:image") 
+            ? `<img src="${d.problemImg}" class="mt-3 max-h-60 rounded border">` 
+            : ""}
+
           ${(d.solutions || []).map((sol, idx) => `
             <div class="mt-4">
               <p class="font-semibold">[${idx + 1}] 해결방법</p>
               <ol class="list-decimal list-inside">
-                ${(sol.steps || []).map(s => `<li>${s.text || ''}${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}</li>`).join('')}
+                ${(sol.steps || []).map(s => `
+                  <li>${s.text || ''}${s.img ? `<br><img src="${s.img}" class="mt-1 max-h-40 rounded border">` : ''}</li>`
+                ).join('')}
               </ol>
             </div>
           `).join('')}
+
+          <!-- 🔽 하단에도 목록으로 돌아가기 -->
           <div class="mt-6">
-            <a href="${window.location.origin + window.location.pathname}" class="text-blue-600 underline">← 목록으로 돌아가기</a>
+            <a href="https://whdalsrnsdk5-ux.github.io/fixitfast/" class="text-blue-600 underline">← 목록으로 돌아가기</a>
           </div>
         </div>
       `;
@@ -496,19 +551,14 @@ window.addEventListener("DOMContentLoaded", async () => {
       console.error(e);
       alert("로드 실패");
     }
-  }
+   }
 });
+
 function viewIssue(id) {
-  // QR 코드용 URL
   const url = window.location.origin + window.location.pathname + "?id=" + id;
-  // 이동하거나 복사 선택
-  if (confirm("QR 주소로 바로 이동할까요?")) {
-    window.location.href = url;
-  } else {
-    navigator.clipboard.writeText(url);
-    alert("URL이 복사되었습니다 ✅");
-  }
+  window.location.href = url; // 바로 이동
 }
+
 async function generateQRCodeAndCopy(id) {
   const qrDiv = document.getElementById("qr-" + id);
   qrDiv.innerHTML = ""; // 기존 QR 초기화
@@ -612,7 +662,7 @@ function toBase64(file) {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         // JPEG로 0.8 품질로 압축
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.4);
         resolve(compressedDataUrl);
       };
       img.onerror = reject;
@@ -632,42 +682,8 @@ if (navigator.permissions) {
   });
 }
 
-// ✅ QR 코드 스캔하기 → 카메라 자동 실행 + QR 인식
-const scanBtn = document.getElementById("scanBtn");
-let qrActive = false;
-
-scanBtn.addEventListener("click", async () => {
-  if (qrActive) return;
-  qrActive = true;
-
-  const readerDiv = document.getElementById("reader");
-  readerDiv.innerHTML = "";
-  readerDiv.style.display = "block";
-
-  // html5-qrcode 객체 생성
-  const html5QrCode = new Html5Qrcode("reader");
-
-  try {
-    // ✅ 후면 카메라 자동 실행 + QR 실시간 인식
-    await html5QrCode.start(
-      { facingMode: { ideal: "environment" } },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      (decodedText) => {
-        html5QrCode.stop();
-        qrActive = false;
-        alert("✅ QR 코드 인식 성공\n" + decodedText);
-        window.location.href = decodedText; // QR 안의 URL로 이동
-      }
-    );
-  } catch (err) {
-    alert("❌ 카메라 접근 실패: " + err.message);
-    console.error(err);
-    qrActive = false;
-  }
-});
 
 
-</script>
 
 
 </script>
@@ -679,5 +695,40 @@ scanBtn.addEventListener("click", async () => {
     <div id="qrLargeContainer" class="flex justify-center"></div>
   </div>
 </div>
+
+
+<!-- 1️⃣ 라이브러리 불러오기 -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+
+<!-- 2️⃣ 버튼과 스캔 영역 -->
+<button id="scanBtn">📷 QR 코드 스캔하기</button>
+<div id="reader" style="width:300px;height:300px;margin-top:10px;"></div>
+
+<!-- 3️⃣ 스크립트 -->
+<script>
+document.getElementById("scanBtn").addEventListener("click", () => {
+  const reader = document.getElementById("reader");
+  reader.innerHTML = ""; // 초기화
+  const qrScanner = new Html5Qrcode("reader");
+
+  qrScanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    (decodedText) => {
+      alert("QR 인식됨 ✅: " + decodedText);
+      window.location.href = decodedText; // 바로 이동 가능
+      qrScanner.stop();
+    },
+    (errorMessage) => {
+      console.log("인식 중...", errorMessage);
+    }
+  ).catch(err => {
+    alert("카메라 실행 실패 ❌: " + err);
+  });
+});
+</script>
+
+
+
 </body>
 </html>
