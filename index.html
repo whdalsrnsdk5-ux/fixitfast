@@ -447,7 +447,7 @@ async function toggleDetail(id) {
   }
 }
 
-llet qrActive = false;
+let qrActive = false;
 const scanBtn = document.getElementById("scanBtn");
 
 scanBtn.addEventListener("click", async () => {
@@ -658,6 +658,10 @@ if (navigator.permissions) {
     }
   });
 }
+// 🔁 페이지 로드시 자동으로 목록 표시
+document.addEventListener("DOMContentLoaded", () => {
+  renderIssues();
+});
 
 
 </script>
