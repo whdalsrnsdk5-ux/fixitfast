@@ -73,7 +73,6 @@
 <!-- Firebase module (must be module to use v10 API) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
 
   import {
     getFirestore, collection, addDoc, getDocs, query, orderBy, doc, getDoc, deleteDoc, updateDoc
@@ -91,11 +90,6 @@ import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstat
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-const storage = getStorage(app);
-window.storage = storage;
-window.ref = ref;
-window.uploadString = uploadString;
-window.getDownloadURL = getDownloadURL;
 
   // expose to window so non-module script can use them
   window.db = db;
@@ -270,10 +264,7 @@ let problemImg = '';
 const problemPhotoInput = document.getElementById('problemPhoto');
 const oldImg = document.getElementById('problemPreview').src;
 if (problemPhotoInput.files.length > 0) {
-  const base64 = await toBase64(problemPhotoInput.files[0]);
-  const storageRef = window.ref(window.storage, "images/" + Date.now() + "_problem.jpg");
-  await window.uploadString(storageRef, base64, "data_url");
-  problemImg = await window.getDownloadURL(storageRef);
+  problemImg = await toBase64(problemPhotoInput.files[0]);
 }
 
 
@@ -295,10 +286,7 @@ else if (oldImg) {
  const oldPreview = stepEl.querySelector('.step-preview');
 
 if (imgInput && imgInput.files.length > 0) {
-  const base64 = await toBase64(imgInput.files[0]);
-  const storageRef = window.ref(window.storage, "images/" + Date.now() + "_step.jpg");
-  await window.uploadString(storageRef, base64, "data_url");
-  img = await window.getDownloadURL(storageRef);
+  img = await toBase64(imgInput.files[0]);
 }
 
 
@@ -630,6 +618,14 @@ document.addEventListener("click", async (e) => {
     };
   }
 });
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+}
 
 
 </script>
