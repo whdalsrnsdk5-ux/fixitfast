@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FixItFast - Firebase Fixed</title>
+
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -674,23 +675,38 @@ if (navigator.permissions) {
   });
 }
 
-// ✅ QR 코드 스캔하기 → 단순히 카메라 실행 (QR 인식 없음)
+// ✅ QR 코드 스캔하기 → 카메라 열고 QR 인식만 (자동 이동 없음)
 document.addEventListener("DOMContentLoaded", () => {
   const scanBtn = document.getElementById("scanBtn");
+  const readerDiv = document.getElementById("reader");
+  let qrActive = false;
 
-  scanBtn.addEventListener("click", () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.capture = "environment"; // 후면 카메라
-    input.click();
+  scanBtn.addEventListener("click", async () => {
+    if (qrActive) return;
+    qrActive = true;
+    readerDiv.innerHTML = "";
+    readerDiv.style.display = "block";
 
-    input.onchange = () => {
-      const file = input.files[0];
-      if (file) {
-        alert("📸 사진이 촬영되었습니다.\n(QR 인식 없이 카메라만 실행)");
-      }
-    };
+    const html5QrCode = new Html5Qrcode("reader");
+
+    try {
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          alert("✅ QR 코드 인식됨: " + decodedText);
+          html5QrCode.stop();
+          qrActive = false;
+        },
+        (errorMessage) => {
+          // 인식 실패는 무시 (계속 시도)
+        }
+      );
+    } catch (err) {
+      alert("❌ 카메라 접근 실패: " + err.message);
+      console.error(err);
+      qrActive = false;
+    }
   });
 });
 
@@ -707,6 +723,6 @@ document.addEventListener("DOMContentLoaded", () => {
   </div>
 </div>
 
-
+  <script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
 </body>
 </html>
