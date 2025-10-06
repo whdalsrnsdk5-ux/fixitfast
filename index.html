@@ -447,37 +447,7 @@ async function toggleDetail(id) {
   }
 }
 
-let qrActive = false;
-const scanBtn = document.getElementById("scanBtn");
 
-scanBtn.addEventListener("click", async () => {
-  if (qrActive) return;
-  qrActive = true;
-
-  const readerDiv = document.getElementById("reader");
-  readerDiv.innerHTML = "";
-  readerDiv.style.display = "block";
-
-  const html5QrCode = new Html5Qrcode("reader");
-
-  try {
-    // ✅ 기존 스트림 강제 종료 후 시작
-    await html5QrCode.stop().catch(() => {});
-    await html5QrCode.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      (decodedText) => {
-        html5QrCode.stop();
-        qrActive = false;
-        window.location.href = decodedText;
-      }
-    );
-  } catch (err) {
-    alert("❌ 카메라 접근 실패: " + err.message);
-    console.error(err);
-    qrActive = false;
-  }
-});
 
 
 // DOMContentLoaded - bind events and initial render, and check URL param
@@ -662,6 +632,43 @@ if (navigator.permissions) {
   });
 }
 
+
+// ✅ QR 코드 스캔하기 → 카메라 자동 실행 + QR 인식
+const scanBtn = document.getElementById("scanBtn");
+let qrActive = false;
+
+scanBtn.addEventListener("click", async () => {
+  if (qrActive) return;
+  qrActive = true;
+
+  const readerDiv = document.getElementById("reader");
+  readerDiv.innerHTML = "";
+  readerDiv.style.display = "block";
+
+  // html5-qrcode 객체 생성
+  const html5QrCode = new Html5Qrcode("reader");
+
+  try {
+    // ✅ 후면 카메라 자동 실행
+    await html5QrCode.start(
+      { facingMode: { ideal: "environment" } },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decodedText) => {
+        // ✅ QR 코드 인식 즉시 페이지 이동
+        html5QrCode.stop();
+        qrActive = false;
+        window.location.href = decodedText;
+      },
+      (errorMessage) => {
+        // 인식 중 에러 로그는 무시 (반복 인식 방지)
+      }
+    );
+  } catch (err) {
+    alert("❌ 카메라 접근 실패: " + err.message);
+    console.error(err);
+    qrActive = false;
+  }
+});
 
 </script>
 <!-- QR 코드 큰 이미지 모달 -->
