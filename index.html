@@ -698,29 +698,47 @@ if (navigator.permissions) {
 </div>
 
 
-<!-- 1️⃣ 라이브러리 불러오기 -->
+<!-- html5-qrcode 라이브러리 -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 
-<!-- 2️⃣ 버튼과 스캔 영역 -->
-<button id="scanBtn">📷 QR 코드 스캔하기</button>
-<div id="reader" style="width:300px;height:300px;margin-top:10px;"></div>
+<!-- QR 스캔 버튼 + 미리보기 -->
+<div class="text-center mt-4">
+  <button id="scanBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+    📷 QR 코드 스캔하기
+  </button>
+</div>
+<div id="reader" style="width:300px;height:300px;margin:10px auto;"></div>
 
-<!-- 3️⃣ 스크립트 -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
-
-<div id="reader" style="width:300px;height:300px;"></div>
 <script>
-const qrScanner = new Html5Qrcode("reader");
-qrScanner.start(
-  { facingMode: "environment" }, // 후면 카메라
-  { fps: 10, qrbox: { width: 250, height: 250 } },
-  decodedText => {
-    alert("QR 코드 인식됨 ✅: " + decodedText);
-    window.location.href = decodedText;
-    qrScanner.stop();
-  },
-  error => { console.log("인식 중...", error); }
-);
+document.addEventListener("DOMContentLoaded", () => {
+  const scanBtn = document.getElementById("scanBtn");
+  const reader = document.getElementById("reader");
+  let qrScanner = null;
+
+  scanBtn.addEventListener("click", async () => {
+    if (!qrScanner) {
+      qrScanner = new Html5Qrcode("reader");
+    }
+
+    try {
+      await qrScanner.start(
+        { facingMode: "environment" }, // 후면 카메라
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        decodedText => {
+          alert("QR 코드 인식됨 ✅: " + decodedText);
+          qrScanner.stop(); // 스캔 중지
+          window.location.href = decodedText;
+        },
+        error => {
+          console.log("인식 중...", error);
+        }
+      );
+    } catch (e) {
+      console.error("QR 스캔 오류:", e);
+      alert("카메라 접근 또는 스캔 오류가 발생했습니다 ❌");
+    }
+  });
+});
 </script>
 
 
