@@ -690,106 +690,54 @@ if (navigator.permissions) {
 </div>
 
 
-<!-- 안전한 QR 초기화: 여러 CDN 시도 + 클릭 시 라이브러리 존재 확인 -->
+<!-- ✅ QR 코드 스캔 기능 (2025 최신 CDN + 단순 카메라 + 인식만) -->
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.13/html5-qrcode.min.js"></script>
 <script>
-(function(){
-  const CDNS = [
-    "https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js",
-    "https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js",
-    "https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.10/minified/html5-qrcode.min.js",
-    "https://raw.githubusercontent.com/mebjas/html5-qrcode/master/minified/html5-qrcode.min.js"
-  ];
+document.addEventListener("DOMContentLoaded", () => {
+  const scanBtn = document.getElementById("scanBtn");
+  const reader = document.getElementById("reader");
 
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = src;
-      s.async = true;
-      s.onload = () => resolve(src);
-      s.onerror = () => reject(new Error("fail:" + src));
-      document.body.appendChild(s);
-    });
-  }
+  if (!scanBtn || !reader) return;
 
-  async function loadAnyCdn() {
-    for (const url of CDNS) {
-      try {
-        await loadScript(url);
-        if (typeof Html5Qrcode !== "undefined") return true;
-      } catch(e) {
-        console.warn("다음 CDN 실패:", url);
-      }
-    }
-    return false;
-  }
+  let qrScanner = null;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const scanBtn = document.getElementById("scanBtn");
-    const readerDiv = document.getElementById("reader");
-
-    if (!scanBtn) { console.error("scanBtn 요소 없음"); return; }
-    if (!readerDiv) { console.error("reader 요소 없음"); return; }
-
-    let instance = null;
-    let active = false;
-
-    async function stopInstance() {
-      if (instance) {
-        try { await instance.stop(); } catch(e) {}
-        try { instance.clear(); } catch(e) {}
-        instance = null;
-      }
-      active = false;
-      readerDiv.innerHTML = "";
-      readerDiv.style.display = "none";
+  scanBtn.addEventListener("click", async () => {
+    // 이미 실행 중이면 무시
+    if (qrScanner) {
+      alert("이미 카메라가 켜져 있습니다.");
+      return;
     }
 
-    scanBtn.addEventListener("click", async () => {
-      console.log("scanBtn clicked, Html5Qrcode:", typeof Html5Qrcode);
-      if (active) { console.log("이미 실행중"); return; }
-      active = true;
+    // Html5Qrcode 존재 확인
+    if (typeof Html5Qrcode === "undefined") {
+      alert("QR 스캐너 라이브러리 로드 실패");
+      return;
+    }
 
-      // 1) 라이브러리 유무 확인 — 없으면 여러 CDN 중 시도
-      if (typeof Html5Qrcode === "undefined") {
-        console.log("Html5Qrcode 없음 → CDN 시도 시작");
-        const ok = await loadAnyCdn();
-        if (!ok) {
-          alert("QR 라이브러리 로드 실패\n(네트워크 또는 차단 확인). 시크릿 모드나 확장 프로그램(Adblock) 끄고 다시 시도하세요.");
-          active = false;
-          return;
+    reader.innerHTML = `<div id="qr-reader" style="width:300px;height:300px;margin:0 auto;"></div>`;
+    reader.style.display = "block";
+
+    qrScanner = new Html5Qrcode("qr-reader");
+
+    try {
+      await qrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          alert("✅ QR 코드 인식됨: " + decodedText);
+          qrScanner.stop();
+          reader.innerHTML = "";
+          qrScanner = null;
         }
-        console.log("Html5Qrcode 로드 완료:", typeof Html5Qrcode);
-      }
-
-      // 2) reader 영역 준비
-      readerDiv.innerHTML = '<div id="qr-reader" style="width:300px;height:300px;margin:0 auto;"></div>';
-      readerDiv.style.display = "block";
-
-      try {
-        instance = new Html5Qrcode("qr-reader");
-        await instance.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
-            // 인식되면 결과만 보여주고 자동 이동은 하지 않음
-            alert("✅ QR 인식: " + decodedText);
-            stopInstance();
-          }
-        );
-        console.log("QR 시작 성공");
-      } catch (err) {
-        console.error("QR 시작 실패:", err);
-        alert("카메라 실행 실패: " + (err && err.message ? err.message : err));
-        await stopInstance();
-      }
-    });
-
-    // ESC로 닫기
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") stopInstance(); });
+      );
+    } catch (err) {
+      alert("카메라 실행 실패: " + err.message);
+      console.error(err);
+      qrScanner = null;
+    }
   });
-})();
+});
 </script>
-
 
 </body>
 </html>
