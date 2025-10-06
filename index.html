@@ -674,46 +674,46 @@ if (navigator.permissions) {
   });
 }
 
-
 // ✅ QR 코드 스캔하기 → 카메라 자동 실행 + QR 인식
-const scanBtn = document.getElementById("scanBtn");
-let qrActive = false;
-let html5QrCode = null;
+document.addEventListener("DOMContentLoaded", () => {
+  const scanBtn = document.getElementById("scanBtn");
+  let qrActive = false;
+  let html5QrCode = null;
 
-scanBtn.addEventListener("click", async () => {
-  try {
-    if (qrActive) return;
-    qrActive = true;
+  scanBtn.addEventListener("click", async () => {
+    try {
+      if (qrActive) return;
+      qrActive = true;
 
-    const readerDiv = document.getElementById("reader");
-    readerDiv.innerHTML = "";
-    readerDiv.style.display = "block";
+      const readerDiv = document.getElementById("reader");
+      readerDiv.innerHTML = "";
+      readerDiv.style.display = "block";
 
-    // ✅ 기존 객체가 있다면 종료 후 새로 생성
-    if (html5QrCode) {
-      await html5QrCode.stop().catch(() => {});
-      html5QrCode.clear();
-    }
-    html5QrCode = new Html5Qrcode("reader");
-
-    await html5QrCode.start(
-      { facingMode: { ideal: "environment" } },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      (decodedText) => {
-        html5QrCode.stop();
-        qrActive = false;
-        alert("✅ QR 코드 인식 성공\n" + decodedText);
-        window.location.href = decodedText;
-      },
-      (errorMsg) => {
-        // 인식 실패 로그는 무시
+      // ✅ 기존 객체 종료 후 재시작
+      if (html5QrCode) {
+        await html5QrCode.stop().catch(() => {});
+        html5QrCode.clear();
       }
-    );
-  } catch (err) {
-    alert("❌ 카메라 접근 실패: " + err.message);
-    console.error(err);
-    qrActive = false;
-  }
+
+      html5QrCode = new Html5Qrcode("reader");
+
+      // ✅ 모바일에서 후면 카메라 강제 설정
+      await html5QrCode.start(
+        { facingMode: { exact: "environment" } },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          html5QrCode.stop();
+          qrActive = false;
+          alert("✅ QR 코드 인식 성공\n" + decodedText);
+          window.location.href = decodedText;
+        }
+      );
+    } catch (err) {
+      alert("❌ 카메라 접근 실패\n브라우저 설정에서 카메라 접근을 허용해주세요.");
+      console.error(err);
+      qrActive = false;
+    }
+  });
 });
 
 
