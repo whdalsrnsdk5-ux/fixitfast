@@ -53,12 +53,8 @@
 
       <label class="font-semibold">사고 내용</label>
       <textarea id="problem" class="w-full border mb-2 p-2 rounded" rows="2"></textarea>
-  <div class="flex items-center space-x-2 mb-2">
-  <input id="problemPhoto" type="file" accept="image/*" class="flex-grow border p-1 rounded">
-  <button type="button" id="cameraProblemBtn" class="bg-gray-200 px-2 py-1 rounded">📸 카메라</button>
-</div>
-<img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
-
+      <input id="problemPhoto" type="file" accept="image/*" class="w-full mb-2">
+      <img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
 
       <div id="solutionsContainer" class="space-y-4 mb-4"></div>
       <button id="addSolutionBtn" class="bg-blue-200 text-sm px-3 py-1 rounded">+ 해결방법 추가</button>
@@ -73,8 +69,6 @@
 <!-- Firebase module (must be module to use v10 API) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-storage.js";
-
   import {
     getFirestore, collection, addDoc, getDocs, query, orderBy, doc, getDoc, deleteDoc, updateDoc
   } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
@@ -83,19 +77,13 @@ import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstat
     apiKey: "AIzaSyA75TRjxqZusMTv9J7SpChNqavgZQH5LeI",
     authDomain: "fixitfast-web.firebaseapp.com",
     projectId: "fixitfast-web",
-   storageBucket: "fixitfast-web.appspot.com",
-
+    storageBucket: "fixitfast-web.firebasestorage.app",
     messagingSenderId: "609762639355",
     appId: "1:609762639355:web:a8a39674fe5f806f085f5e"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-const storage = getStorage(app);
-window.storage = storage;
-window.ref = ref;
-window.uploadString = uploadString;
-window.getDownloadURL = getDownloadURL;
 
   // expose to window so non-module script can use them
   window.db = db;
@@ -127,18 +115,14 @@ function toBase64(file) {
 function addStep(container) {
   const stepDiv = document.createElement('div');
   stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
-stepDiv.innerHTML = `
-  <div class="flex justify-between items-center">
-    <input placeholder="단계 설명" class="step-input w-full border p-2 rounded mb-1">
-    <button class="removeStep text-red-500 text-sm ml-2">X</button>
-  </div>
-  <div class="flex items-center space-x-2">
-    <input type="file" accept="image/*" class="step-image flex-grow border p-1 rounded">
-    <button type="button" class="cameraBtn bg-gray-200 px-2 py-1 rounded">📸</button>
-  </div>
-  <img class="step-preview hidden mt-2 max-h-32 rounded border">
-`;
-
+  stepDiv.innerHTML = `
+    <div class="flex justify-between items-center">
+      <input placeholder="단계 설명" class="step-input w-full border p-2 rounded mb-1">
+      <button class="removeStep text-red-500 text-sm ml-2">X</button>
+    </div>
+    <input type="file" accept="image/*" class="step-image w-full">
+    <img class="step-preview hidden mt-2 max-h-32 rounded border">
+  `;
   stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
 
   const fileInput = stepDiv.querySelector('.step-image');
@@ -270,14 +254,8 @@ let problemImg = '';
 const problemPhotoInput = document.getElementById('problemPhoto');
 const oldImg = document.getElementById('problemPreview').src;
 if (problemPhotoInput.files.length > 0) {
-  const base64 = await toBase64(problemPhotoInput.files[0]);
-  const storageRef = window.ref(window.storage, "images/" + Date.now() + "_problem.jpg");
-  await window.uploadString(storageRef, base64, "data_url");
-  problemImg = await window.getDownloadURL(storageRef);
-}
-
-
-else if (oldImg) {
+  problemImg = await toBase64(problemPhotoInput.files[0]);
+} else if (oldImg) {
   problemImg = oldImg; // 기존 이미지 유지
 }
 
@@ -293,16 +271,9 @@ else if (oldImg) {
       const imgInput = stepEl.querySelector('.step-image');
    
  const oldPreview = stepEl.querySelector('.step-preview');
-
 if (imgInput && imgInput.files.length > 0) {
-  const base64 = await toBase64(imgInput.files[0]);
-  const storageRef = window.ref(window.storage, "images/" + Date.now() + "_step.jpg");
-  await window.uploadString(storageRef, base64, "data_url");
-  img = await window.getDownloadURL(storageRef);
-}
-
-
-else if (oldPreview && oldPreview.src) {
+  img = await toBase64(imgInput.files[0]);
+} else if (oldPreview && oldPreview.src) {
   img = oldPreview.src; // 기존 이미지 유지
 }
 steps.push({ text, img });
@@ -448,6 +419,7 @@ async function toggleDetail(id) {
   }
 }
 
+/* QR 스캔 (html5-qrcode) 개선 버전 */
 let qrActive = false;
 const scanBtn = document.getElementById("scanBtn");
 
@@ -484,6 +456,7 @@ scanBtn.addEventListener("click", () => {
     qrActive = false;
   }
 });
+
 
 // DOMContentLoaded - bind events and initial render, and check URL param
 window.addEventListener("DOMContentLoaded", async () => {
@@ -587,49 +560,6 @@ function closeQRModal() {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
 }
-
-// 📸 카메라 버튼 공통 기능
-document.addEventListener("click", async (e) => {
-  // 1️⃣ 사고 내용 사진
-  if (e.target.id === "cameraProblemBtn") {
-    const input = document.getElementById("problemPhoto");
-    input.setAttribute("capture", "environment"); // 후면 카메라 우선
-    input.click();
-    input.onchange = () => {
-      const file = input.files[0];
-      if (file) {
-        const preview = document.getElementById("problemPreview");
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          preview.src = evt.target.result;
-          preview.classList.remove("hidden");
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-  }
-
-  // 2️⃣ 단계 내 카메라 버튼
-  if (e.target.classList.contains("cameraBtn")) {
-    const parent = e.target.closest(".step-item");
-    const input = parent.querySelector(".step-image");
-    const preview = parent.querySelector(".step-preview");
-    input.setAttribute("capture", "environment");
-    input.click();
-
-    input.onchange = () => {
-      const file = input.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          preview.src = evt.target.result;
-          preview.classList.remove("hidden");
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-  }
-});
 
 
 </script>
