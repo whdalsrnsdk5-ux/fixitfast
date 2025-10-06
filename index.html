@@ -53,8 +53,13 @@
 
       <label class="font-semibold">사고 내용</label>
       <textarea id="problem" class="w-full border mb-2 p-2 rounded" rows="2"></textarea>
-      <input id="problemPhoto" type="file" accept="image/*" class="w-full mb-2">
-      <img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
+  <div class="flex items-center space-x-2 mb-2">
+  <input id="problemPhoto" type="file" accept="image/*" capture="environment" class="flex-grow border p-1 rounded">
+
+  <button type="button" id="cameraProblemBtn" class="bg-gray-200 px-2 py-1 rounded">📸 카메라</button>
+</div>
+<img id="problemPreview" class="hidden rounded border max-h-48 mb-4">
+
 
       <div id="solutionsContainer" class="space-y-4 mb-4"></div>
       <button id="addSolutionBtn" class="bg-blue-200 text-sm px-3 py-1 rounded">+ 해결방법 추가</button>
@@ -69,6 +74,7 @@
 <!-- Firebase module (must be module to use v10 API) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+
   import {
     getFirestore, collection, addDoc, getDocs, query, orderBy, doc, getDoc, deleteDoc, updateDoc
   } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
@@ -77,7 +83,8 @@
     apiKey: "AIzaSyA75TRjxqZusMTv9J7SpChNqavgZQH5LeI",
     authDomain: "fixitfast-web.firebaseapp.com",
     projectId: "fixitfast-web",
-    storageBucket: "fixitfast-web.firebasestorage.app",
+   storageBucket: "fixitfast-web.appspot.com",
+
     messagingSenderId: "609762639355",
     appId: "1:609762639355:web:a8a39674fe5f806f085f5e"
   };
@@ -115,14 +122,19 @@ function toBase64(file) {
 function addStep(container) {
   const stepDiv = document.createElement('div');
   stepDiv.className = 'step-item border p-2 rounded bg-gray-50 mb-2';
-  stepDiv.innerHTML = `
-    <div class="flex justify-between items-center">
-      <input placeholder="단계 설명" class="step-input w-full border p-2 rounded mb-1">
-      <button class="removeStep text-red-500 text-sm ml-2">X</button>
-    </div>
-    <input type="file" accept="image/*" class="step-image w-full">
-    <img class="step-preview hidden mt-2 max-h-32 rounded border">
-  `;
+stepDiv.innerHTML = `
+  <div class="flex justify-between items-center">
+    <input placeholder="단계 설명" class="step-input w-full border p-2 rounded mb-1">
+    <button class="removeStep text-red-500 text-sm ml-2">X</button>
+  </div>
+  <div class="flex items-center space-x-2">
+    <input type="file" accept="image/*" capture="environment" class="step-image flex-grow border p-1 rounded">
+
+    <button type="button" class="cameraBtn bg-gray-200 px-2 py-1 rounded">📸</button>
+  </div>
+  <img class="step-preview hidden mt-2 max-h-32 rounded border">
+`;
+
   stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
 
   const fileInput = stepDiv.querySelector('.step-image');
@@ -222,7 +234,8 @@ function openModal(edit=false, docId=null) {
               <input value="${s.text || ''}" class="step-input w-full border p-2 rounded mb-1">
               <button class="removeStep text-red-500 text-sm ml-2">X</button>
             </div>
-            <input type="file" accept="image/*" class="step-image w-full">
+            <input type="file" accept="image/*" capture="environment" class="step-image w-full">
+
             ${s.img ? `<img src="${s.img}" class="step-preview mt-2 max-h-32 rounded border">` : `<img class="step-preview hidden mt-2 max-h-32 rounded border">`}
           `;
           stepDiv.querySelector('.removeStep').onclick = () => stepDiv.remove();
@@ -245,6 +258,9 @@ function closeModal() {
 
 /* Save (create or update) */
 async function saveIssue() {
+document.getElementById('saveBtn').disabled = true;
+document.getElementById('saveBtn').textContent = "⏳ 저장 중...";
+
   const region = document.getElementById('region').value;
   const location = document.getElementById('location').value;
   const device = document.getElementById('device').value;
@@ -255,7 +271,10 @@ const problemPhotoInput = document.getElementById('problemPhoto');
 const oldImg = document.getElementById('problemPreview').src;
 if (problemPhotoInput.files.length > 0) {
   problemImg = await toBase64(problemPhotoInput.files[0]);
-} else if (oldImg) {
+}
+
+
+else if (oldImg) {
   problemImg = oldImg; // 기존 이미지 유지
 }
 
@@ -271,9 +290,13 @@ if (problemPhotoInput.files.length > 0) {
       const imgInput = stepEl.querySelector('.step-image');
    
  const oldPreview = stepEl.querySelector('.step-preview');
+
 if (imgInput && imgInput.files.length > 0) {
   img = await toBase64(imgInput.files[0]);
-} else if (oldPreview && oldPreview.src) {
+}
+
+
+else if (oldPreview && oldPreview.src) {
   img = oldPreview.src; // 기존 이미지 유지
 }
 steps.push({ text, img });
@@ -298,6 +321,11 @@ steps.push({ text, img });
   } catch (e) {
     console.error("저장 오류:", e);
     alert("저장 실패 ❌ (콘솔 확인)");
+} finally {
+  document.getElementById('saveBtn').disabled = false;
+  document.getElementById('saveBtn').textContent = "저장";
+
+
   }
 }
 
@@ -558,6 +586,61 @@ function closeQRModal() {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
 }
+
+// 📸 카메라 버튼 공통 기능
+document.addEventListener("click", async (e) => {
+  // 1️⃣ 사고 내용 사진
+  if (e.target.id === "cameraProblemBtn") {
+    const input = document.getElementById("problemPhoto");
+    input.setAttribute("capture", "environment"); // 후면 카메라 우선
+    input.click();
+    input.onchange = () => {
+      const file = input.files[0];
+      if (file) {
+        const preview = document.getElementById("problemPreview");
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          preview.src = evt.target.result;
+          preview.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+
+  // 2️⃣ 단계 내 카메라 버튼
+  if (e.target.classList.contains("cameraBtn")) {
+    const parent = e.target.closest(".step-item");
+    const input = parent.querySelector(".step-image");
+    const preview = parent.querySelector(".step-preview");
+    input.setAttribute("capture", "environment");
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          preview.src = evt.target.result;
+          preview.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+});
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // 모바일에서 변환이 느릴 때 약간의 대기 시간 추가
+      setTimeout(() => resolve(reader.result), 200);
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
+}
+
 
 
 </script>
