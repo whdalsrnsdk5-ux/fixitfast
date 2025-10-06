@@ -691,9 +691,23 @@ if (navigator.permissions) {
 
 
 
-<!-- ✅ QR 스캐너 라이브러리 (공식 최신 안정 버전) -->
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+<!-- ✅ QR 스캐너 라이브러리 (정상 작동 버전) -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 
+<!-- Firebase -->
+<script type="module">
+  ...Firebase 초기화 코드...
+</script>
+
+<!-- Main script -->
+<script>
+  ...openModal(), renderIssues(), saveIssue() 등...
+</script>
+
+<!-- ✅ QR 코드 스캐너 라이브러리 -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+
+<!-- ✅ QR 스캔 기능 코드 -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const scanBtn = document.getElementById("scanBtn");
@@ -716,7 +730,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       await qrScanner.start(
-        { facingMode: "environment" }, // 후면 카메라
+        { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
           alert("✅ QR 코드 인식됨: " + decodedText);
@@ -733,6 +747,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
+
 
 
 </body>
