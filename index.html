@@ -612,7 +612,7 @@ function toBase64(file) {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         // JPEG로 0.8 품질로 압축
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
         resolve(compressedDataUrl);
       };
       img.onerror = reject;
