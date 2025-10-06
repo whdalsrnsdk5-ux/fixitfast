@@ -20,9 +20,10 @@
 <!-- QR 스캔 버튼 (기본 카메라로 이동) -->
 <div class="text-center mb-4">
   <label for="qrCameraInput" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer">
-    📷 QR 코드 스캔하기
-  </label>
-  <input id="qrCameraInput" type="file" accept="image/*" capture="environment" class="hidden" />
+  📷 QR 코드 스캔하기
+</label>
+<input id="qrCameraInput" type="file" accept="image/*" capture="environment" class="hidden">
+
 </div>
 
    
@@ -706,26 +707,20 @@ if (navigator.permissions) {
 
 <!-- 3️⃣ 스크립트 -->
 <script>
-document.getElementById("scanBtn").addEventListener("click", () => {
-  const reader = document.getElementById("reader");
-  reader.innerHTML = ""; // 초기화
-  const qrScanner = new Html5Qrcode("reader");
+document.getElementById('qrCameraInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
 
-  qrScanner.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 250, height: 250 } },
-    (decodedText) => {
-      alert("QR 인식됨 ✅: " + decodedText);
-      window.location.href = decodedText; // 바로 이동 가능
-      qrScanner.stop();
-    },
-    (errorMessage) => {
-      console.log("인식 중...", errorMessage);
-    }
-  ).catch(err => {
-    alert("카메라 실행 실패 ❌: " + err);
-  });
+  const reader = new FileReader();
+  reader.onload = function() {
+    // qrcodejs 라이브러리로 이미지 인식
+    const imgData = reader.result;
+    // 여기서 QR 코드 인식
+    const qr = new QrScanner.QrCode(); // qrcodejs 대신 modern qr decoder 사용
+  };
+  reader.readAsDataURL(file);
 });
+
 </script>
 
 
